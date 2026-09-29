@@ -3,134 +3,164 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>سامانه ارزیابی عملکرد</title>
+<title>سامانه ارزیابی عملکرد — BARS</title>
 <link href="https://fonts.googleapis.com/css2?family=Vazirmatn:wght@100..900&display=swap" rel="stylesheet">
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
 <script src="config.js"></script>
 <style>
-  :root{--primary:#1e40af;--primary-light:#3b82f6;--primary-dark:#1e3a8a;--bg:#f1f5f9;--card:#fff;--border:#e2e8f0;--text:#0f172a;--muted:#64748b;--beh:#8b5cf6;--func:#0ea5e9;--success:#10b981;--warning:#f59e0b;--danger:#ef4444;--shadow:0 1px 3px rgba(0,0,0,.06),0 4px 12px rgba(0,0,0,.04);--radius:14px;--radius-sm:8px}
+  :root{--primary:#1e40af;--primary-light:#3b82f6;--primary-dark:#1e3a8a;--bg:#f1f5f9;--card:#fff;--border:#e2e8f0;--text:#0f172a;--muted:#64748b;--beh:#8b5cf6;--func:#0ea5e9;--success:#10b981;--warning:#f59e0b;--danger:#ef4444;--shadow:0 1px 3px rgba(0,0,0,.06),0 4px 12px rgba(0,0,0,.04);--shadow-lg:0 10px 30px rgba(15,23,42,.08);--radius:14px;--radius-sm:8px}
   *{box-sizing:border-box;margin:0;padding:0}
-  body{font-family:'Vazirmatn',system-ui,sans-serif;background:var(--bg);color:var(--text);line-height:1.7;font-size:14px}
+  body{font-family:'Vazirmatn',system-ui,sans-serif;background:var(--bg);color:var(--text);line-height:1.7;font-size:14px;-webkit-font-smoothing:antialiased}
   .hidden{display:none !important}
-  .btn{font-family:inherit;font-size:13.5px;font-weight:600;cursor:pointer;padding:10px 18px;border-radius:10px;border:1px solid transparent;transition:all .18s;display:inline-flex;align-items:center;gap:8px}
-  .btn-primary{background:var(--primary);color:#fff}
-  .btn-primary:hover{background:var(--primary-dark)}
-  .btn-ghost{background:#fff;color:var(--text);border-color:var(--border)}
-  .btn-ghost:hover{background:#f8fafc}
-  .btn-success{background:var(--success);color:#fff}
-  .btn:disabled{opacity:.5;cursor:not-allowed}
-  .field{margin-bottom:14px}
-  .field label{display:block;font-size:12.5px;font-weight:600;color:var(--muted);margin-bottom:6px}
-  .field input,.field select,.field textarea{width:100%;font-family:inherit;font-size:13.5px;padding:10px 12px;border:1px solid var(--border);border-radius:var(--radius-sm);background:#fff}
-  .field input:focus,.field textarea:focus,.field select:focus{outline:none;border-color:var(--primary-light);box-shadow:0 0 0 3px rgba(59,130,246,.12)}
-  .field input:disabled,.field textarea:disabled,.field select:disabled{background:#f8fafc;color:var(--muted);cursor:not-allowed}
   .login-wrap{min-height:100vh;display:flex;align-items:center;justify-content:center;background:linear-gradient(135deg,#1e3a8a,#3b82f6);padding:20px}
   .login-card{background:#fff;border-radius:20px;padding:40px 36px;max-width:420px;width:100%;box-shadow:0 20px 60px rgba(0,0,0,.2)}
   .login-card .logo{font-size:48px;text-align:center;margin-bottom:10px}
   .login-card h1{text-align:center;font-size:20px;color:var(--primary-dark);margin-bottom:6px}
   .login-card p{text-align:center;color:var(--muted);font-size:13px;margin-bottom:24px}
   .login-error{background:#fef2f2;color:var(--danger);padding:10px 14px;border-radius:8px;font-size:13px;margin-bottom:14px;border:1px solid #fecaca}
-  .app-header{background:linear-gradient(135deg,var(--primary-dark),var(--primary),var(--primary-light));color:#fff;padding:16px 0;box-shadow:var(--shadow);position:sticky;top:0;z-index:100}
+  .field{margin-bottom:14px}
+  .field label{display:block;font-size:12.5px;font-weight:600;color:var(--muted);margin-bottom:6px}
+  .field label .req{color:var(--danger);margin-right:3px}
+  .field input,.field select,.field textarea{width:100%;font-family:inherit;font-size:13.5px;color:var(--text);padding:10px 12px;border:1px solid var(--border);border-radius:var(--radius-sm);background:#fff;transition:all .15s ease}
+  .field input:focus,.field textarea:focus,.field select:focus{outline:none;border-color:var(--primary-light);box-shadow:0 0 0 3px rgba(59,130,246,.12)}
+  .field input[readonly],.field input[disabled],.field select[disabled]{background:#f1f5f9;color:var(--muted);cursor:not-allowed;font-weight:600}
+  .btn{font-family:inherit;font-size:13.5px;font-weight:600;cursor:pointer;padding:10px 18px;border-radius:10px;border:1px solid transparent;transition:all .18s ease;display:inline-flex;align-items:center;gap:8px;text-decoration:none;color:inherit}
+  .btn-primary{background:#fff;color:var(--primary-dark)}
+  .btn-primary:hover{transform:translateY(-1px);box-shadow:0 6px 16px rgba(0,0,0,.15)}
+  .btn-ghost{background:rgba(255,255,255,.12);color:#fff;border-color:rgba(255,255,255,.25)}
+  .btn-ghost:hover{background:rgba(255,255,255,.22)}
+  .btn-solid{background:var(--primary);color:#fff}
+  .btn-solid:hover{background:var(--primary-dark)}
+  .btn-success{background:var(--success);color:#fff}
+  .btn-success:hover{filter:brightness(.95)}
+  .btn-light{background:#fff;border-color:var(--border);color:var(--text)}
+  .btn-light:hover{background:#f8fafc}
+  .btn:disabled{opacity:.45;cursor:not-allowed}
+  .app-header{background:linear-gradient(135deg,var(--primary-dark),var(--primary),var(--primary-light));color:#fff;padding:16px 0;position:sticky;top:0;z-index:100;box-shadow:var(--shadow-lg)}
   .header-inner{max-width:1320px;margin:0 auto;padding:0 24px;display:flex;align-items:center;justify-content:space-between;gap:20px;flex-wrap:wrap}
   .brand{display:flex;align-items:center;gap:12px}
-  .brand-icon{width:44px;height:44px;border-radius:12px;background:rgba(255,255,255,.15);display:flex;align-items:center;justify-content:center;font-size:22px}
-  .brand h1{font-size:16px;font-weight:700}
-  .brand p{font-size:11.5px;opacity:.85}
+  .brand-icon{width:46px;height:46px;border-radius:12px;background:rgba(255,255,255,.15);display:flex;align-items:center;justify-content:center;font-size:22px;border:1px solid rgba(255,255,255,.2)}
+  .brand h1{font-size:17px;font-weight:700}
+  .brand p{font-size:11.5px;opacity:.85;margin-top:2px}
   .header-actions{display:flex;gap:8px;flex-wrap:wrap;align-items:center}
   .user-chip{display:inline-flex;align-items:center;gap:8px;background:rgba(255,255,255,.15);padding:7px 14px;border-radius:20px;font-size:12.5px;color:#fff}
+  .role-badge{display:inline-flex;align-items:center;gap:6px;background:rgba(255,255,255,.22);padding:5px 12px;border-radius:20px;font-size:11.5px;font-weight:700}
   .content{max-width:1320px;margin:0 auto;padding:24px}
-  .card{background:var(--card);border:1px solid var(--border);border-radius:var(--radius);box-shadow:var(--shadow);margin-bottom:20px;overflow:hidden}
-  .card-head{padding:16px 22px;border-bottom:1px solid var(--border);display:flex;align-items:center;justify-content:space-between;gap:12px;flex-wrap:wrap;background:linear-gradient(180deg,#fafbfc,#fff)}
+  .card{background:var(--card);border:1px solid var(--border);border-radius:var(--radius);box-shadow:var(--shadow);margin-bottom:20px;overflow:visible}
+  .card-head{padding:16px 22px;border-bottom:1px solid var(--border);display:flex;align-items:center;justify-content:space-between;gap:12px;flex-wrap:wrap;background:linear-gradient(180deg,#fafbfc,#fff);border-radius:var(--radius) var(--radius) 0 0}
   .card-head h2{font-size:15.5px;font-weight:700;display:flex;align-items:center;gap:10px}
-  .card-body{padding:22px}
   .dot{width:10px;height:10px;border-radius:50%;display:inline-block}
-  .dot-beh{background:var(--beh)}
-  .dot-func{background:var(--func)}
+  .dot-beh{background:var(--beh);box-shadow:0 0 0 4px rgba(139,92,246,.15)}
+  .dot-func{background:var(--func);box-shadow:0 0 0 4px rgba(14,165,233,.15)}
   .badge{display:inline-flex;align-items:center;gap:6px;font-size:12px;font-weight:600;padding:5px 12px;border-radius:20px;background:#f1f5f9;color:var(--muted)}
   .badge-beh{background:rgba(139,92,246,.1);color:var(--beh)}
   .badge-func{background:rgba(14,165,233,.1);color:var(--func)}
-  .emp-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(280px,1fr));gap:14px}
-  .emp-card{background:#fff;border:1.5px solid var(--border);border-radius:var(--radius);padding:16px 18px;cursor:pointer;transition:all .2s;position:relative}
-  .emp-card:hover{border-color:var(--primary-light);transform:translateY(-2px);box-shadow:var(--shadow)}
-  .emp-card .emp-name{font-size:15px;font-weight:700;margin-bottom:4px}
-  .emp-card .emp-pos{font-size:12.5px;color:var(--muted);margin-bottom:8px}
-  .emp-card .emp-meta{display:flex;gap:6px;flex-wrap:wrap;font-size:11px}
-  .emp-card .emp-meta span{background:#f1f5f9;padding:3px 8px;border-radius:10px;color:var(--muted)}
-  .status-chip{position:absolute;top:14px;left:14px;font-size:10.5px;font-weight:700;padding:4px 10px;border-radius:20px}
-  .status-none{background:#f1f5f9;color:var(--muted)}
-  .status-draft{background:rgba(245,158,11,.15);color:var(--warning)}
-  .status-submitted{background:rgba(16,185,129,.15);color:var(--success)}
-  .empty-state{text-align:center;padding:60px 20px;color:var(--muted)}
-  .empty-state .ico{font-size:56px;margin-bottom:14px;opacity:.4}
+  .badge-cat-tech{background:rgba(30,64,175,.1);color:var(--primary)}
+  .badge-cat-staff{background:rgba(15,118,110,.1);color:#0f766e}
+  .badge-view{background:rgba(245,158,11,.15);color:#b45309}
+  .badge-locked{background:rgba(16,185,129,.15);color:var(--success)}
+  .card-body{padding:22px}
   .info-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(220px,1fr));gap:16px}
-  .hint-box{background:linear-gradient(135deg,#eff6ff,#f0f9ff);border:1px solid #bfdbfe;border-radius:var(--radius-sm);padding:12px 16px;font-size:12.5px;color:#1e40af;line-height:1.85;display:flex;gap:10px}
+  .hint-box{background:linear-gradient(135deg,#eff6ff,#f0f9ff);border:1px solid #bfdbfe;border-radius:var(--radius-sm);padding:12px 16px;font-size:12.5px;color:#1e40af;line-height:1.85;display:flex;gap:10px;align-items:flex-start}
   .hint-box .icon{font-size:18px;flex-shrink:0}
-  .locked-banner{background:#fef3c7;border:1px solid #fcd34d;color:#92400e;padding:12px 18px;border-radius:var(--radius-sm);margin-bottom:16px;font-size:13px;font-weight:600;display:flex;gap:10px;align-items:center}
-  .comp-card{background:#fff;border:1px solid var(--border);border-radius:var(--radius);margin-bottom:16px;overflow:hidden;box-shadow:var(--shadow)}
-  .comp-head{padding:16px 20px;background:linear-gradient(180deg,#fafbfc,#fff);border-bottom:1px solid var(--border)}
-  .comp-title{display:flex;align-items:center;gap:10px;flex-wrap:wrap;margin-bottom:6px}
-  .comp-title h3{font-size:15px;font-weight:700}
-  .comp-def{font-size:12.5px;color:var(--muted);line-height:1.8}
+  .hint-box.warn{background:linear-gradient(135deg,#fef3c7,#fffbeb);border-color:#fcd34d;color:#92400e}
+  .hint-box.good{background:linear-gradient(135deg,#ecfdf5,#f0fdf4);border-color:#a7f3d0;color:#065f46}
+  .empty-state{text-align:center;padding:60px 20px;color:var(--muted)}
+  .empty-state .es-icon{font-size:48px;margin-bottom:14px;opacity:.4}
+  .empty-state .es-title{font-size:16px;font-weight:700;color:var(--text);margin-bottom:6px}
+  .empty-state .es-desc{font-size:13px;line-height:1.8}
+  .comp-card{background:#fff;border:1px solid var(--border);border-radius:var(--radius);margin-bottom:14px;box-shadow:var(--shadow);scroll-margin-top:90px;overflow:visible}
+  .comp-head{padding:14px 20px;border-bottom:1px solid var(--border);background:linear-gradient(180deg,#fafbfc,#fff);display:flex;justify-content:space-between;gap:14px;flex-wrap:wrap;align-items:flex-start;border-radius:var(--radius) var(--radius) 0 0}
+  .comp-head-right{flex:1;min-width:220px}
+  .comp-title{display:flex;align-items:center;gap:10px;flex-wrap:wrap;margin-bottom:5px}
+  .comp-title h3{font-size:14.5px;font-weight:700;color:var(--text)}
   .weight-pill{display:inline-block;font-size:11.5px;font-weight:700;padding:4px 10px;border-radius:20px;background:#eef2ff;color:var(--primary)}
-  .level-list{display:flex;flex-direction:column;gap:8px;padding:18px 20px}
-  .level-option{position:relative;display:flex;gap:12px;align-items:flex-start;padding:12px 14px;border:1.5px solid var(--border);border-radius:10px;cursor:pointer;transition:all .18s;background:#fff}
-  .level-option:hover{border-color:var(--primary-light);background:#f8fafc}
+  .comp-def{font-size:12.5px;color:var(--muted);line-height:1.75}
+  .mini-chip{font-size:11.5px;font-weight:600;padding:5px 12px;border-radius:20px;background:#f1f5f9;color:var(--muted);white-space:nowrap}
+  .mini-chip.done{background:rgba(59,130,246,.15);color:var(--primary)}
+  .mini-chip.na{background:rgba(100,116,139,.15);color:var(--muted)}
+  .comp-body{padding:16px 20px}
+  .bars-dropdown{position:relative}
+  .bars-trigger{width:100%;padding:11px 14px;border:1.5px solid var(--border);border-radius:10px;background:#fff;cursor:pointer;text-align:right;font-family:inherit;display:flex;justify-content:space-between;align-items:center;font-size:13px;color:var(--text);transition:all .18s ease}
+  .bars-trigger:hover:not(:disabled){border-color:var(--primary-light);background:#f8fafc}
+  .bars-trigger:disabled{cursor:not-allowed;background:#f1f5f9;color:var(--muted)}
+  .bars-trigger-text{flex:1;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+  .bars-trigger-text.placeholder{color:#94a3b8}
+  .bars-trigger-text.selected{font-weight:700;color:var(--primary)}
+  .bars-trigger-icon{flex-shrink:0;margin-right:8px;color:var(--muted);transition:transform .2s ease;font-size:11px}
+  .bars-dropdown.open .bars-trigger{border-color:var(--primary);box-shadow:0 0 0 3px rgba(59,130,246,.12)}
+  .bars-dropdown.open .bars-trigger-icon{transform:rotate(180deg)}
+  .bars-dropdown.drop-up.open .bars-trigger-icon{transform:rotate(0deg)}
+  .bars-panel{position:absolute;top:calc(100% + 6px);right:0;left:0;background:#fff;border:1.5px solid var(--border);border-radius:12px;box-shadow:0 15px 40px rgba(15,23,42,.15);padding:8px;z-index:50;display:none;max-height:60vh;overflow-y:auto}
+  .bars-dropdown.open .bars-panel{display:block;animation:slideDown .18s ease}
+  .bars-dropdown.drop-up .bars-panel{top:auto;bottom:calc(100% + 6px);animation:slideUp .18s ease}
+  @keyframes slideDown{from{opacity:0;transform:translateY(-6px)}to{opacity:1;transform:none}}
+  @keyframes slideUp{from{opacity:0;transform:translateY(6px)}to{opacity:1;transform:none}}
+  .level-option{position:relative;display:flex;gap:12px;align-items:flex-start;padding:10px 12px;border-radius:8px;cursor:pointer;transition:all .15s ease;margin-bottom:4px}
+  .level-option:last-child{margin-bottom:0}
+  .level-option:hover:not(.disabled){background:#f8fafc}
   .level-option input{position:absolute;opacity:0;pointer-events:none}
-  .level-num{flex-shrink:0;width:30px;height:30px;border-radius:8px;display:flex;align-items:center;justify-content:center;font-weight:800;font-size:13px;color:#fff}
+  .level-num{flex-shrink:0;width:28px;height:28px;border-radius:8px;display:flex;align-items:center;justify-content:center;font-weight:800;font-size:12px;color:#fff}
   .level-num.ln1{background:linear-gradient(135deg,#ef4444,#f87171)}
   .level-num.ln2{background:linear-gradient(135deg,#f59e0b,#fbbf24)}
   .level-num.ln3{background:linear-gradient(135deg,#0ea5e9,#38bdf8)}
   .level-num.ln4{background:linear-gradient(135deg,#10b981,#34d399)}
   .level-num.ln5{background:linear-gradient(135deg,#8b5cf6,#a78bfa)}
-  .level-text{font-size:13px;line-height:1.75;flex:1}
-  .level-tag{display:block;font-size:10.5px;font-weight:700;color:var(--muted);margin-bottom:3px}
-  .level-option.selected{border-color:var(--primary);background:linear-gradient(180deg,#eff6ff,#f8fafc)}
-  .level-option.selected::after{content:'✓';position:absolute;top:10px;left:12px;color:var(--primary);font-weight:900}
-  .na-option .level-num{background:linear-gradient(135deg,#64748b,#94a3b8);font-size:11px}
-  .na-option.selected{border-color:#64748b}
-  .na-option.selected::after{color:#64748b}
-  .evidence-row{padding:14px 20px 18px;background:#fafbfc;border-top:1px solid var(--border)}
-  .evidence-row label{font-size:12px;font-weight:600;color:var(--muted);display:block;margin-bottom:6px}
-  .evidence-row textarea{width:100%;min-height:56px;font-family:inherit;font-size:13px;padding:10px 12px;border:1px solid var(--border);border-radius:var(--radius-sm);background:#fff;resize:vertical}
-  .evidence-row textarea:disabled{background:#f1f5f9;cursor:not-allowed}
-  .score-summary{display:grid;grid-template-columns:repeat(auto-fit,minmax(200px,1fr));gap:16px;margin-bottom:20px}
+  .level-text{font-size:12.5px;line-height:1.7;color:var(--text);flex:1}
+  .level-tag{display:block;font-size:10.5px;font-weight:700;color:var(--muted);margin-bottom:2px;letter-spacing:.2px}
+  .level-option.selected{background:linear-gradient(180deg,#eff6ff,#f8fafc);box-shadow:inset 0 0 0 1.5px var(--primary)}
+  .level-option.selected .level-text{font-weight:600}
+  .level-option.selected::after{content:'✓';position:absolute;top:8px;left:10px;color:var(--primary);font-weight:900;font-size:13px}
+  .level-option.na-option{border-top:1px dashed #e2e8f0;margin-top:6px;padding-top:12px;border-radius:0 0 8px 8px}
+  .level-option.na-option .level-num{background:linear-gradient(135deg,#64748b,#94a3b8);font-size:10px}
+  .level-option.na-option.selected{box-shadow:inset 0 0 0 1.5px #64748b;background:#f8fafc}
+  .level-option.na-option.selected::after{color:#64748b}
+  .evidence-row{margin-top:12px}
+  .evidence-row label{font-size:11.5px;font-weight:600;color:var(--muted);display:block;margin-bottom:5px}
+  .evidence-row textarea{width:100%;min-height:48px;font-family:inherit;font-size:12.5px;padding:9px 12px;border:1px solid var(--border);border-radius:var(--radius-sm);background:#fafbfc;resize:vertical}
+  .evidence-row textarea:focus{outline:none;border-color:var(--primary-light);box-shadow:0 0 0 3px rgba(59,130,246,.12);background:#fff}
+  .evidence-row textarea:disabled{background:#f1f5f9;color:var(--muted);cursor:not-allowed}
+  .score-summary{display:grid;grid-template-columns:repeat(auto-fit,minmax(200px,1fr));gap:16px}
   .stat{background:linear-gradient(180deg,#fff,#fafbfc);border:1px solid var(--border);border-radius:var(--radius);padding:20px;text-align:center;position:relative;overflow:hidden}
   .stat::before{content:'';position:absolute;top:0;right:0;left:0;height:4px}
-  .stat.beh::before{background:var(--beh)}
-  .stat.func::before{background:var(--func)}
-  .stat.final::before{background:var(--primary)}
+  .stat.beh::before{background:linear-gradient(90deg,var(--beh),#a78bfa)}
+  .stat.func::before{background:linear-gradient(90deg,var(--func),#38bdf8)}
+  .stat.final::before{background:linear-gradient(90deg,var(--primary),var(--primary-light))}
   .stat-label{font-size:12.5px;color:var(--muted);font-weight:600;margin-bottom:8px}
-  .stat-value{font-size:30px;font-weight:800;line-height:1.1}
+  .stat-value{font-size:30px;font-weight:800;letter-spacing:-1px;line-height:1.1}
   .stat.beh .stat-value{color:var(--beh)}
   .stat.func .stat-value{color:var(--func)}
   .stat.final .stat-value{color:var(--primary)}
   .stat-sub{font-size:11.5px;color:var(--muted);margin-top:6px}
   .progress-track{height:10px;background:#e2e8f0;border-radius:20px;overflow:hidden;margin-top:20px}
-  .progress-fill{height:100%;border-radius:20px;transition:width .5s;background:linear-gradient(90deg,var(--primary),var(--primary-light))}
-  .rating-row{display:flex;justify-content:space-between;align-items:center;margin-top:14px;flex-wrap:wrap;gap:10px}
-  .rating-label{font-size:13.5px;color:var(--muted)}
-  .rating-chip{font-size:13px;font-weight:700;padding:6px 16px;border-radius:20px;background:#f1f5f9;color:var(--muted)}
-  .rating-excellent{background:rgba(16,185,129,.12);color:var(--success)}
-  .rating-great{background:rgba(59,130,246,.12);color:var(--primary)}
-  .rating-good{background:rgba(14,165,233,.12);color:var(--func)}
-  .rating-warning{background:rgba(245,158,11,.12);color:var(--warning)}
-  .rating-danger{background:rgba(239,68,68,.12);color:var(--danger)}
+  .progress-fill{height:100%;border-radius:20px;transition:width .5s ease;background:linear-gradient(90deg,var(--primary),var(--primary-light))}
   .feedback-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(280px,1fr));gap:16px}
   .feedback-grid textarea{width:100%;min-height:110px;font-family:inherit;font-size:13.5px;padding:12px;border:1px solid var(--border);border-radius:var(--radius-sm);resize:vertical;line-height:1.8}
+  .feedback-grid textarea:focus{outline:none;border-color:var(--primary-light);box-shadow:0 0 0 3px rgba(59,130,246,.12)}
   .feedback-grid textarea:disabled{background:#f1f5f9;cursor:not-allowed}
+  .action-bar{display:flex;gap:10px;flex-wrap:wrap;align-items:center;padding:16px 22px;background:linear-gradient(180deg,#fafbfc,#fff);border-top:1px solid var(--border);border-radius:0 0 var(--radius) var(--radius)}
   .save-status{font-size:12px;color:var(--muted);margin-left:auto;display:flex;align-items:center;gap:6px}
   .save-status.saved{color:var(--success)}
   .save-status.saving{color:var(--warning)}
-  .toast{position:fixed;bottom:20px;left:50%;transform:translateX(-50%);background:#0f172a;color:#fff;padding:12px 22px;border-radius:30px;font-size:13px;z-index:999;opacity:0;transition:opacity .3s;pointer-events:none}
+  .save-status.error{color:var(--danger)}
+  .toast{position:fixed;bottom:20px;left:50%;transform:translateX(-50%);background:#0f172a;color:#fff;padding:12px 22px;border-radius:30px;font-size:13px;z-index:999;opacity:0;transition:opacity .3s;pointer-events:none;max-width:90vw}
   .toast.show{opacity:1}
   .toast.error{background:var(--danger)}
   .toast.success{background:var(--success)}
-  @media(max-width:640px){.header-inner{padding:0 16px}.content{padding:16px}.brand h1{font-size:14px}.brand p{display:none}.stat-value{font-size:24px}}
+  @media(max-width:640px){
+    .header-inner{padding:0 16px}
+    .content{padding:16px}
+    .brand h1{font-size:14px}
+    .brand p{display:none}
+    .stat-value{font-size:24px}
+    .login-card{padding:32px 24px}
+  }
 </style>
 </head>
 <body>
 
+<!-- ===== Login Screen ===== -->
 <div class="login-wrap" id="loginScreen">
   <div class="login-card">
     <div class="logo">📊</div>
@@ -138,45 +168,217 @@
     <p>برای ورود، ایمیل و رمز عبور خود را وارد کنید</p>
     <div class="login-error hidden" id="loginError"></div>
     <div class="field"><label>ایمیل</label><input type="email" id="loginEmail" dir="ltr" placeholder="you@example.com"></div>
-    <div class="field"><label>رمز عبور</label><input type="password" id="loginPassword" dir="ltr" placeholder="••••••••"></div>
-    <button class="btn btn-primary" id="loginBtn" style="width:100%;justify-content:center" onclick="doLogin()">ورود به سامانه</button>
+    <div class="field"><label>رمز عبور</label><input type="password" id="loginPassword" dir="ltr" placeholder="••••••••" onkeydown="if(event.key==='Enter')doLogin()"></div>
+    <button class="btn btn-solid" id="loginBtn" style="width:100%;justify-content:center" onclick="doLogin()">ورود به سامانه</button>
   </div>
 </div>
 
+<!-- ===== App Screen ===== -->
 <div id="appScreen" class="hidden">
   <header class="app-header">
     <div class="header-inner">
       <div class="brand">
         <div class="brand-icon">📊</div>
-        <div><h1>سامانه ارزیابی عملکرد — BARS</h1><p id="orgName">—</p></div>
+        <div>
+          <h1>سامانه ارزیابی عملکرد — BARS</h1>
+          <p id="orgName">—</p>
+        </div>
       </div>
       <div class="header-actions">
+        <span class="role-badge" id="roleBadge" style="display:none">—</span>
         <span class="user-chip" id="userChip">—</span>
-        <button class="btn btn-ghost" id="backBtn" onclick="goHome()" style="display:none">↩ بازگشت</button>
+        <a href="admin.html" class="btn btn-ghost hidden" id="adminLink">⚙️ پنل ادمین</a>
         <button class="btn btn-ghost" onclick="logout()">🚪 خروج</button>
       </div>
     </div>
   </header>
-  <main class="content" id="mainContent"></main>
+
+  <main class="content">
+    <div class="card">
+      <div class="card-head">
+        <h2>👤 اطلاعات ارزیابی</h2>
+        <span class="badge" id="categoryBadge" style="display:none">—</span>
+      </div>
+      <div class="card-body">
+        <div class="info-grid">
+          <div class="field">
+            <label>واحد سازمانی <span class="req">*</span></label>
+            <select id="unitSelect" onchange="onUnitChange()"></select>
+          </div>
+          <div class="field">
+            <label>ارزیاب (مدیر مستقیم) <span class="req">*</span></label>
+            <select id="evaluatorSelect" onchange="onEvaluatorChange()"></select>
+          </div>
+          <div class="field">
+            <label>ارزیابی‌شونده <span class="req">*</span></label>
+            <select id="evaluateeSelect" onchange="onEvaluateeChange()"></select>
+          </div>
+          <div class="field">
+            <label>عنوان شغلی</label>
+            <input type="text" id="positionField" readonly placeholder="پس از انتخاب ارزیابی‌شونده">
+          </div>
+          <div class="field">
+            <label>سطح سازمانی</label>
+            <input type="text" id="levelField" readonly placeholder="پس از انتخاب ارزیابی‌شونده">
+          </div>
+          <div class="field">
+            <label>دوره ارزیابی</label>
+            <select id="periodField"></select>
+          </div>
+          <div class="field">
+            <label>تاریخ ارزیابی</label>
+            <input type="text" id="dateField" readonly title="خودکار">
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="card" id="hintCard" style="display:none">
+      <div class="card-body" style="padding:14px 20px">
+        <div class="hint-box" id="hintBox">
+          <span class="icon" id="hintIcon">💡</span>
+          <div id="hintText">
+            <b>راهنمای ارزیاب:</b> امتیاز هر شایستگی را <b>نسبت به انتظارات همان سطح سازمانی</b> تعیین کنید.
+            سطح ۳ یعنی «مطابق انتظار این سطح»، و سطح ۵ یعنی «فراتر از انتظار این سطح».
+            اگر شایستگی در دوره ارزیابی برای این همکار مصداق نداشته، گزینه <b>N/A</b> را انتخاب کنید.
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div id="competencyContainer"></div>
+
+    <div class="card" id="summaryCard" style="display:none">
+      <div class="card-head">
+        <h2>📈 جمع‌بندی امتیاز نهایی</h2>
+        <span class="badge" id="summaryWeightBadge">—</span>
+      </div>
+      <div class="card-body">
+        <div class="score-summary">
+          <div class="stat func">
+            <div class="stat-label">میانگین وزنی عملکردی</div>
+            <div class="stat-value" id="funcAvgDisplay">—</div>
+            <div class="stat-sub">از ۱۰۰</div>
+          </div>
+          <div class="stat beh">
+            <div class="stat-label">میانگین وزنی رفتاری</div>
+            <div class="stat-value" id="behAvgDisplay">—</div>
+            <div class="stat-sub">از ۱۰۰</div>
+          </div>
+          <div class="stat final">
+            <div class="stat-label">امتیاز نهایی</div>
+            <div class="stat-value" id="finalScoreDisplay">—</div>
+            <div class="stat-sub">از ۱۰۰</div>
+          </div>
+        </div>
+        <div class="progress-track"><div class="progress-fill" id="progressBar" style="width:0%"></div></div>
+      </div>
+    </div>
+
+    <div class="card" id="feedbackCard" style="display:none">
+      <div class="card-head"><h2>💬 بازخورد کیفی و برنامه توسعه فردی</h2></div>
+      <div class="card-body">
+        <div class="feedback-grid">
+          <div class="field">
+            <label>نقاط قوت همکار</label>
+            <textarea id="strengthsField" placeholder="مهم‌ترین نقاط قوت همکار..."></textarea>
+          </div>
+          <div class="field">
+            <label>حوزه‌های نیازمند بهبود</label>
+            <textarea id="improvementsField" placeholder="زمینه‌هایی که نیاز به تقویت دارند..."></textarea>
+          </div>
+          <div class="field">
+            <label>اقدامات توسعه پیشنهادی</label>
+            <textarea id="actionsField" placeholder="دوره آموزشی، منتورینگ، پروژه بهبود و..."></textarea>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="card" id="actionCard" style="display:none">
+      <div class="action-bar">
+        <span class="save-status" id="saveStatus"></span>
+        <button class="btn btn-light" onclick="printReport()">🖨 کارنامه چاپی</button>
+        <button class="btn btn-light" onclick="exportExcel()">⬇ خروجی اکسل</button>
+        <button class="btn btn-success hidden" id="submitBtn" onclick="submitFinal()">✅ ارسال نهایی و قفل کردن</button>
+      </div>
+    </div>
+
+    <div class="empty-state" id="emptyState">
+      <div class="es-icon">📋</div>
+      <div class="es-title">برای شروع، اطلاعات ارزیابی را تکمیل کنید</div>
+      <div class="es-desc" id="emptyStateDesc">
+        ابتدا واحد سازمانی، ارزیاب و ارزیابی‌شونده را انتخاب کنید.<br>
+        پس از انتخاب ارزیابی‌شونده، فرم شایستگی‌های مربوط به همان دسته نمایش داده می‌شود.
+      </div>
+    </div>
+  </main>
 </div>
 
 <div class="toast" id="toast"></div>
 
 <script>
+// ============================================================
+// راه‌اندازی
+// ============================================================
 const sb = window.supabase.createClient(SUPABASE_URL, SUPABASE_PUBLISHABLE_KEY);
+
 let currentUser = null;
 let currentProfile = null;
-let currentEmployee = null;
-let currentEvaluation = null;
-let employeesList = [];
+let isManagerMode = false;
+let isViewOnly = false;
 
+let allEmployees = [];
+let allProfiles = [];
+let hierarchy = [];
+let evaluationsMap = {};
+let currentEvaluation = null;
+let currentEmployee = null;
+let currentCategory = null;
+
+// ============================================================
+// Utilities
+// ============================================================
 function showToast(msg, type=''){
   const t = document.getElementById('toast');
   t.textContent = msg; t.className = 'toast show ' + type;
-  setTimeout(()=> t.className='toast '+type, 2500);
+  setTimeout(()=> t.className = 'toast ' + type, 2500);
 }
-function escapeHtml(s){ return (s||'').replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c])); }
+function escapeHtml(s){
+  if (s === null || s === undefined) return '';
+  return String(s).replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+}
+function setSaveStatus(cls, txt){
+  const el = document.getElementById('saveStatus');
+  if (!el) return;
+  el.className = 'save-status ' + cls;
+  el.textContent = txt;
+  if (cls === 'saved') setTimeout(()=>{ if(el.textContent==='✓ ذخیره شد') el.textContent=''; }, 2500);
+}
 
+// تاریخ شمسی
+function toJalali(gy, gm, gd){
+  const g_d_m = [0,31,59,90,120,151,181,212,243,273,304,334];
+  let jy = (gy <= 1600) ? 0 : 979;
+  gy -= (gy <= 1600) ? 621 : 1600;
+  const gy2 = (gm > 2) ? (gy + 1) : gy;
+  let days = (365*gy) + Math.floor((gy2+3)/4) - Math.floor((gy2+99)/100) + Math.floor((gy2+399)/400) - 80 + gd + g_d_m[gm-1];
+  jy += 33 * Math.floor(days/12053); days %= 12053;
+  jy += 4 * Math.floor(days/1461); days %= 1461;
+  if (days > 365){ jy += Math.floor((days-1)/365); days = (days-1)%365; }
+  const jm = (days < 186) ? 1 + Math.floor(days/31) : 7 + Math.floor((days-186)/30);
+  const jd = 1 + ((days < 186) ? (days%31) : ((days-186)%30));
+  return [jy, jm, jd];
+}
+function getTodayShamsi(){
+  const now = new Date();
+  const [jy, jm, jd] = toJalali(now.getFullYear(), now.getMonth()+1, now.getDate());
+  return `${jy}/${String(jm).padStart(2,'0')}/${String(jd).padStart(2,'0')}`;
+}
+
+// ============================================================
+// Auth
+// ============================================================
 async function doLogin(){
   const email = document.getElementById('loginEmail').value.trim();
   const password = document.getElementById('loginPassword').value;
@@ -190,253 +392,569 @@ async function doLogin(){
   if (error){ errEl.textContent = 'خطا: ' + error.message; errEl.classList.remove('hidden'); return; }
   initApp();
 }
-
 async function logout(){ await sb.auth.signOut(); location.reload(); }
 
 async function checkSession(){
   const { data: { session } } = await sb.auth.getSession();
-  if (session){ initApp(); }
-  else { document.getElementById('loginScreen').classList.remove('hidden'); }
+  if (session) initApp();
+  else document.getElementById('loginScreen').classList.remove('hidden');
 }
 
 async function initApp(){
   const { data: { user } } = await sb.auth.getUser();
   if (!user){ document.getElementById('loginScreen').classList.remove('hidden'); return; }
   currentUser = user;
+
   const { data: profile } = await sb.from('profiles').select('*').eq('id', user.id).single();
   currentProfile = profile || { full_name: user.email, role: 'evaluator' };
+
+  isManagerMode = (currentProfile.role === 'manager' || currentProfile.role === 'admin');
+
   document.getElementById('loginScreen').classList.add('hidden');
   document.getElementById('appScreen').classList.remove('hidden');
   document.getElementById('orgName').textContent = APP_CONFIG.ORG_NAME;
   document.getElementById('userChip').textContent = '👤 ' + (currentProfile.full_name || user.email);
-  await loadDashboard();
+
+  const roleBadge = document.getElementById('roleBadge');
+  roleBadge.style.display = 'inline-flex';
+  if (currentProfile.role === 'admin'){ roleBadge.textContent = '🛠 ادمین'; }
+  else if (currentProfile.role === 'manager'){ roleBadge.textContent = '👔 مدیر ارزیابی'; }
+  else { roleBadge.textContent = '📝 ارزیاب'; }
+
+  if (currentProfile.role === 'admin'){
+    document.getElementById('adminLink').classList.remove('hidden');
+  }
+
+  // پر کردن دوره‌ها
+  const periodSel = document.getElementById('periodField');
+  periodSel.innerHTML = APP_CONFIG.PERIODS.map(p =>
+    `<option value="${p}" ${p === APP_CONFIG.DEFAULT_PERIOD ? 'selected':''}>${p}</option>`
+  ).join('');
+
+  document.getElementById('dateField').value = getTodayShamsi();
+
+  await loadAll();
+  buildHierarchy();
+  initSelectors();
+  updateEmptyStateMessage();
 }
 
-async function loadDashboard(){
-  currentEmployee = null;
-  currentEvaluation = null;
-  document.getElementById('backBtn').style.display = 'none';
-  const { data: emps, error } = await sb.from('employees').select('*').eq('is_active', true).order('full_name');
-  if (error){ showToast('خطا: ' + error.message, 'error'); return; }
-  employeesList = emps || [];
-  const { data: evals } = await sb.from('evaluations').select('id, employee_id, status, period, final_score, rating_label');
-  const evalMap = {};
-  (evals||[]).forEach(e => { evalMap[e.employee_id] = e; });
-  const mc = document.getElementById('mainContent');
-  if (!employeesList.length){
-    mc.innerHTML = `<div class="card"><div class="empty-state"><div class="ico">📭</div><h3>هنوز پرسنلی ثبت نشده</h3><p>از پنل ادمین، لیست پرسنل را وارد کنید.</p></div></div>`;
+// ============================================================
+// Load Data
+// ============================================================
+async function loadAll(){
+  const [empRes, profRes, evalRes] = await Promise.all([
+    sb.from('employees').select('*').eq('is_active', true).order('full_name'),
+    sb.from('profiles').select('*'),
+    sb.from('evaluations').select('id, employee_id, status, submitted_at')
+  ]);
+  allEmployees = empRes.data || [];
+  allProfiles = profRes.data || [];
+  evaluationsMap = {};
+  (evalRes.data || []).forEach(e => { evaluationsMap[e.employee_id] = e; });
+}
+
+function buildHierarchy(){
+  const units = {};
+  allEmployees.forEach(e => {
+    if (!e.unit) return;
+    if (!units[e.unit]) units[e.unit] = { name: e.unit, evaluators: {} };
+    if (!units[e.unit].evaluators[e.evaluator_id]){
+      const prof = allProfiles.find(p => p.id === e.evaluator_id);
+      units[e.unit].evaluators[e.evaluator_id] = {
+        id: e.evaluator_id,
+        name: prof ? prof.full_name : '—',
+        evaluatees: []
+      };
+    }
+    units[e.unit].evaluators[e.evaluator_id].evaluatees.push(e);
+  });
+  hierarchy = Object.values(units).map(u => ({
+    name: u.name,
+    evaluators: Object.values(u.evaluators)
+  }));
+}
+
+// ============================================================
+// Selectors
+// ============================================================
+function initSelectors(){
+  const unitSel = document.getElementById('unitSelect');
+  const evalSel = document.getElementById('evaluatorSelect');
+  const empSel = document.getElementById('evaluateeSelect');
+
+  if (isManagerMode){
+    // حالت مدیر: هر سه سلکتور باز
+    unitSel.disabled = false;
+    unitSel.innerHTML = '<option value="">— انتخاب کنید —</option>' +
+      hierarchy.map((u, i) => `<option value="${i}">${escapeHtml(u.name)}</option>`).join('');
+    evalSel.disabled = true;
+    evalSel.innerHTML = '<option value="">— ابتدا واحد را انتخاب کنید —</option>';
+    empSel.disabled = true;
+    empSel.innerHTML = '<option value="">— ابتدا ارزیاب را انتخاب کنید —</option>';
+  } else {
+    // حالت ارزیاب: واحد و نام خودش قفل
+    const myEmployees = allEmployees.filter(e => e.evaluator_id === currentUser.id);
+    if (myEmployees.length === 0){
+      unitSel.disabled = true;
+      unitSel.innerHTML = '<option value="">—</option>';
+      evalSel.disabled = true;
+      evalSel.innerHTML = '<option value="">—</option>';
+      empSel.disabled = true;
+      empSel.innerHTML = '<option value="">—</option>';
+      document.getElementById('emptyStateDesc').innerHTML =
+        'هنوز پرسنلی به شما اختصاص داده نشده است.<br>لطفاً با مدیر سیستم تماس بگیرید.';
+      return;
+    }
+
+    // واحد: اولین واحد موجود (فرض می‌کنیم همه زیرمجموعه‌ها یک واحد دارند)
+    const myUnit = myEmployees[0].unit || '—';
+    unitSel.disabled = true;
+    unitSel.innerHTML = `<option value="locked">${escapeHtml(myUnit)}</option>`;
+
+    evalSel.disabled = true;
+    evalSel.innerHTML = `<option value="locked">${escapeHtml(currentProfile.full_name || '—')}</option>`;
+
+    // لیست ارزیابی‌شونده‌ها
+    empSel.disabled = false;
+    empSel.innerHTML = '<option value="">— انتخاب کنید —</option>' +
+      myEmployees.map((e, i) => `<option value="${e.id}">${escapeHtml(e.full_name)}${e.position ? ' — '+escapeHtml(e.position) : ''}</option>`).join('');
+  }
+}
+
+function onUnitChange(){
+  if (!isManagerMode) return;
+  const unitIdx = document.getElementById('unitSelect').value;
+  const evalSel = document.getElementById('evaluatorSelect');
+  const empSel = document.getElementById('evaluateeSelect');
+
+  resetCurrent();
+
+  if (unitIdx === ''){
+    evalSel.disabled = true;
+    evalSel.innerHTML = '<option value="">— ابتدا واحد را انتخاب کنید —</option>';
+    empSel.disabled = true;
+    empSel.innerHTML = '<option value="">— ابتدا ارزیاب را انتخاب کنید —</option>';
     return;
   }
-  let html = `<div class="card"><div class="card-head"><h2>👥 لیست پرسنل تحت ارزیابی شما</h2><span class="badge">${employeesList.length} نفر</span></div><div class="card-body"><div class="emp-grid">`;
-  employeesList.forEach(e => {
-    const ev = evalMap[e.id];
-    const status = ev ? ev.status : 'none';
-    const statusText = status==='submitted' ? 'ارسال‌شده' : status==='draft' ? 'پیش‌نویس' : 'شروع نشده';
-    const catLabel = e.category === 'technical' ? '⚙️ فنی' : '📋 ستادی';
-    const scoreInfo = ev && ev.status==='submitted' && ev.final_score ? ` • امتیاز: ${ev.final_score}` : '';
-    html += `<div class="emp-card" onclick="openEmployee('${e.id}')">
-      <span class="status-chip status-${status}">${statusText}</span>
-      <div class="emp-name">${escapeHtml(e.full_name)}</div>
-      <div class="emp-pos">${escapeHtml(e.position||'—')}${scoreInfo}</div>
-      <div class="emp-meta"><span>${catLabel}</span><span>${escapeHtml(e.job_level||'—')}</span><span>${escapeHtml(e.unit||'—')}</span></div>
+  const unit = hierarchy[parseInt(unitIdx)];
+  evalSel.disabled = false;
+  evalSel.innerHTML = '<option value="">— انتخاب کنید —</option>' +
+    unit.evaluators.map((ev, i) => `<option value="${i}">${escapeHtml(ev.name)}</option>`).join('');
+  empSel.disabled = true;
+  empSel.innerHTML = '<option value="">— ابتدا ارزیاب را انتخاب کنید —</option>';
+}
+
+function onEvaluatorChange(){
+  if (!isManagerMode) return;
+  const unitIdx = document.getElementById('unitSelect').value;
+  const evalIdx = document.getElementById('evaluatorSelect').value;
+  const empSel = document.getElementById('evaluateeSelect');
+
+  resetCurrent();
+
+  if (unitIdx === '' || evalIdx === ''){
+    empSel.disabled = true;
+    empSel.innerHTML = '<option value="">— ابتدا ارزیاب را انتخاب کنید —</option>';
+    return;
+  }
+  const unit = hierarchy[parseInt(unitIdx)];
+  const ev = unit.evaluators[parseInt(evalIdx)];
+  empSel.disabled = false;
+  empSel.innerHTML = '<option value="">— انتخاب کنید —</option>' +
+    ev.evaluatees.map(e => `<option value="${e.id}">${escapeHtml(e.full_name)}${e.position ? ' — '+escapeHtml(e.position) : ''}</option>`).join('');
+}
+
+// ============================================================
+// Evaluation Loading
+// ============================================================
+async function onEvaluateeChange(){
+  const empId = document.getElementById('evaluateeSelect').value;
+  if (!empId){ resetCurrent(); return; }
+
+  const emp = allEmployees.find(e => e.id === empId);
+  if (!emp) return;
+
+  currentEmployee = emp;
+  currentCategory = emp.category;
+
+  document.getElementById('positionField').value = emp.position || '—';
+  document.getElementById('levelField').value = emp.job_level || '—';
+
+  const badge = document.getElementById('categoryBadge');
+  badge.style.display = 'inline-flex';
+  badge.textContent = emp.category === 'technical' ? '⚙️ کارشناسان فنی' : '📋 کارشناسان ستادی';
+  badge.className = 'badge ' + (emp.category === 'technical' ? 'badge-cat-tech' : 'badge-cat-staff');
+
+  // بررسی وجود ارزیابی
+  const existingEval = evaluationsMap[empId];
+
+  if (existingEval){
+    // بارگذاری ارزیابی موجود
+    const { data: ev } = await sb.from('evaluations').select('*').eq('id', existingEval.id).single();
+    const { data: items } = await sb.from('evaluation_items').select('*').eq('evaluation_id', existingEval.id);
+    currentEvaluation = ev;
+    const isLocked = ev.status === 'submitted';
+    const managerViewOnly = isManagerMode && currentUser.id !== ev.evaluator_id;
+    isViewOnly = isLocked || managerViewOnly;
+
+    document.getElementById('periodField').value = ev.period || APP_CONFIG.DEFAULT_PERIOD;
+    document.getElementById('strengthsField').value = ev.strengths || '';
+    document.getElementById('improvementsField').value = ev.improvements || '';
+    document.getElementById('actionsField').value = ev.actions || '';
+
+    renderForm(items || []);
+    showFormUI();
+    applyViewOnlyState();
+  } else {
+    // حالت جدید
+    if (isManagerMode && currentUser.id !== emp.evaluator_id){
+      // مدیر: ارزیابی ثبت نشده
+      currentEvaluation = null;
+      isViewOnly = true;
+      renderManagerEmpty();
+      return;
+    }
+    // ارزیاب: ساخت پیش‌نویس
+    const { data: created, error } = await sb.from('evaluations').insert({
+      employee_id: emp.id,
+      evaluator_id: currentUser.id,
+      category: emp.category,
+      period: APP_CONFIG.DEFAULT_PERIOD,
+      status: 'draft'
+    }).select().single();
+    if (error){ showToast('خطا: ' + error.message, 'error'); return; }
+    currentEvaluation = created;
+    evaluationsMap[empId] = { id: created.id, status: 'draft' };
+    isViewOnly = false;
+    renderForm([]);
+    showFormUI();
+    applyViewOnlyState();
+  }
+
+  recalc();
+  document.getElementById('dateField').value = getTodayShamsi();
+}
+
+function resetCurrent(){
+  currentEvaluation = null;
+  currentEmployee = null;
+  currentCategory = null;
+  isViewOnly = false;
+  document.getElementById('positionField').value = '';
+  document.getElementById('levelField').value = '';
+  document.getElementById('categoryBadge').style.display = 'none';
+  document.getElementById('hintCard').style.display = 'none';
+  document.getElementById('summaryCard').style.display = 'none';
+  document.getElementById('feedbackCard').style.display = 'none';
+  document.getElementById('actionCard').style.display = 'none';
+  document.getElementById('emptyState').style.display = '';
+  document.getElementById('competencyContainer').innerHTML = '';
+  document.getElementById('strengthsField').value = '';
+  document.getElementById('improvementsField').value = '';
+  document.getElementById('actionsField').value = '';
+  document.getElementById('periodField').value = APP_CONFIG.DEFAULT_PERIOD;
+}
+
+function showFormUI(){
+  document.getElementById('hintCard').style.display = '';
+  document.getElementById('summaryCard').style.display = '';
+  document.getElementById('feedbackCard').style.display = '';
+  document.getElementById('actionCard').style.display = '';
+  document.getElementById('emptyState').style.display = 'none';
+  const w = CATEGORY_WEIGHTS[currentCategory];
+  document.getElementById('summaryWeightBadge').textContent =
+    `وزن: عملکردی ${w.functional}٪ + رفتاری ${w.behavioral}٪`;
+}
+
+function updateEmptyStateMessage(){
+  const desc = document.getElementById('emptyStateDesc');
+  if (isManagerMode){
+    desc.innerHTML = 'برای مشاهده کارنامه، واحد، ارزیاب و ارزیابی‌شونده را انتخاب کنید.';
+  } else {
+    desc.innerHTML = 'ارزیابی‌شونده را از لیست زیرمجموعه‌های خود انتخاب کنید.';
+  }
+}
+
+// ============================================================
+// Render Form
+// ============================================================
+function renderForm(items){
+  const itemMap = {};
+  items.forEach(it => { itemMap[it.competency_key] = it; });
+
+  let html = '';
+  html += renderSection('functional', 'شایستگی‌های عملکردی', CATEGORY_WEIGHTS[currentCategory].functional, 'func', 'عملکردی', itemMap);
+  html += renderSection('behavioral', 'شایستگی‌های رفتاری', CATEGORY_WEIGHTS[currentCategory].behavioral, 'beh', 'رفتاری', itemMap);
+  document.getElementById('competencyContainer').innerHTML = html;
+}
+
+function renderManagerEmpty(){
+  document.getElementById('competencyContainer').innerHTML = `
+    <div class="card"><div class="empty-state">
+      <div class="es-icon">📭</div>
+      <div class="es-title">هنوز ارزیابی برای این همکار ثبت نشده است</div>
+      <div class="es-desc">پس از تکمیل ارزیابی توسط مدیر مستقیم، نتیجه در این بخش نمایش داده می‌شود.</div>
+    </div></div>`;
+  document.getElementById('hintCard').style.display = 'none';
+  document.getElementById('summaryCard').style.display = 'none';
+  document.getElementById('feedbackCard').style.display = 'none';
+  document.getElementById('actionCard').style.display = 'none';
+  document.getElementById('emptyState').style.display = 'none';
+}
+
+function renderSection(cat, title, weightPct, colorClass, catLabel, itemMap){
+  const items = FORMS[currentCategory][cat];
+  let html = `
+  <div class="card">
+    <div class="card-head">
+      <h2><span class="dot dot-${colorClass}"></span> ${title}</h2>
+      <span class="badge badge-${colorClass}">${catLabel} — وزن ${weightPct}٪ از امتیاز نهایی</span>
+    </div>
+    <div class="card-body" style="background:#f8fafc; padding:16px 18px">`;
+
+  items.forEach((item, i) => {
+    const base = `${currentCategory}_${cat}_${i}`;
+    const saved = itemMap[base];
+    html += `
+    <div class="comp-card" id="card_${base}">
+      <div class="comp-head">
+        <div class="comp-head-right">
+          <div class="comp-title">
+            <h3>${i+1}. ${escapeHtml(item.name)}</h3>
+            <span class="weight-pill">وزن: ${item.weight}٪</span>
+          </div>
+          <div class="comp-def">${escapeHtml(item.def)}</div>
+        </div>
+        <div class="comp-status">
+          <span class="mini-chip" id="chip_${base}">امتیاز: —</span>
+        </div>
+      </div>
+      <div class="comp-body">
+        <div class="bars-dropdown" id="dd_${base}">
+          <button type="button" class="bars-trigger" id="trigger_${base}" onclick="toggleBarsDropdown('dd_${base}', event)">
+            <span class="bars-trigger-text placeholder" id="triggerText_${base}">انتخاب سطح شایستگی ▼</span>
+          </button>
+          <div class="bars-panel">${renderLevelOptions(base, cat, i, saved)}</div>
+        </div>
+        <div class="evidence-row">
+          <label>📎 شواهد / مثال عینی (اختیاری)</label>
+          <textarea id="ev_${base}" data-base="${base}" data-cat="${cat}" placeholder="مثال مشخصی که این امتیاز بر آن استوار است...">${escapeHtml(saved?.evidence || '')}</textarea>
+        </div>
+      </div>
     </div>`;
   });
-  html += `</div></div></div>`;
-  mc.innerHTML = html;
-}
 
-function goHome(){ loadDashboard(); }
-
-async function openEmployee(empId){
-  const emp = employeesList.find(e => e.id === empId);
-  if (!emp) return;
-  currentEmployee = emp;
-  const { data: existing } = await sb.from('evaluations').select('*').eq('employee_id', empId).maybeSingle();
-  if (existing){
-    currentEvaluation = existing;
-    const { data: items } = await sb.from('evaluation_items').select('*').eq('evaluation_id', existing.id);
-    renderForm(items || []);
-  } else {
-    const { data: created, error } = await sb.from('evaluations').insert({
-      employee_id: empId, evaluator_id: currentUser.id, category: emp.category,
-      period: APP_CONFIG.DEFAULT_PERIOD, status: 'draft'
-    }).select().single();
-    if (error){ showToast('خطا در ایجاد ارزیابی: ' + error.message, 'error'); return; }
-    currentEvaluation = created;
-    renderForm([]);
-  }
-  document.getElementById('backBtn').style.display = 'inline-flex';
-  window.scrollTo({top:0});
-}
-
-function isLocked(){ return currentEvaluation && currentEvaluation.status === 'submitted'; }
-
-function renderForm(items){
-  const key = currentEmployee.category;
-  const form = FORMS[key];
-  const w = CATEGORY_WEIGHTS[key];
-  const locked = isLocked();
-  const itemMap = {};
-  items.forEach(it => itemMap[it.competency_key] = it);
-  const ev = currentEvaluation;
-  const mc = document.getElementById('mainContent');
-  let html = '';
-  if (locked){
-    html += `<div class="locked-banner">🔒 این ارزیابی در تاریخ ${ev.submitted_at ? new Date(ev.submitted_at).toLocaleDateString('fa-IR') : ''} ثبت نهایی شده و قابل ویرایش نیست.</div>`;
-  }
-  html += `<div class="card"><div class="card-head"><h2>👤 اطلاعات ارزیابی — ${escapeHtml(currentEmployee.full_name)}</h2><span class="badge">${form.title}</span></div>
-    <div class="card-body"><div class="info-grid">
-    <div class="field"><label>نام و نام خانوادگی</label><input type="text" value="${escapeHtml(currentEmployee.full_name)}" disabled></div>
-    <div class="field"><label>سمت</label><input type="text" value="${escapeHtml(currentEmployee.position||'')}" disabled></div>
-    <div class="field"><label>سطح شغلی</label><input type="text" value="${escapeHtml(currentEmployee.job_level||'')}" disabled></div>
-    <div class="field"><label>واحد</label><input type="text" value="${escapeHtml(currentEmployee.unit||'')}" disabled></div>
-    <div class="field"><label>ارزیاب</label><input type="text" value="${escapeHtml(currentProfile.full_name||'')}" disabled></div>
-    <div class="field"><label>دوره ارزیابی</label><input type="text" id="periodInput" value="${escapeHtml(ev.period||'')}" ${locked?'disabled':''} onchange="saveHeader()"></div>
-  </div></div></div>`;
-  html += `<div class="card"><div class="card-body" style="padding:14px 20px"><div class="hint-box"><span class="icon">💡</span>
-    <div>امتیاز هر شایستگی را <b>نسبت به انتظارات سطح شغلی</b> تعیین کنید. سطح ۳ یعنی «مطابق انتظار». اگر مصداق نداشت، <b>N/A</b> را انتخاب کنید.
-    <br><b>وزن‌ها:</b> رفتاری ${w.behavioral}٪ + عملکردی ${w.functional}٪</div></div></div></div>`;
-  html += renderSection(key, 'behavioral', 'شایستگی‌های رفتاری', w.behavioral, 'beh', 'رفتاری', itemMap, locked);
-  html += renderSection(key, 'functional', 'شایستگی‌های عملکردی', w.functional, 'func', 'عملکردی', itemMap, locked);
-  html += `<div class="card"><div class="card-head"><h2>📈 جمع‌بندی امتیاز نهایی</h2><span class="badge">وزن: ${w.behavioral}٪ + ${w.functional}٪</span></div>
-    <div class="card-body">
-      <div class="score-summary">
-        <div class="stat beh"><div class="stat-label">میانگین رفتاری</div><div class="stat-value" id="behAvg">—</div><div class="stat-sub">از ۵</div></div>
-        <div class="stat func"><div class="stat-label">میانگین عملکردی</div><div class="stat-value" id="funcAvg">—</div><div class="stat-sub">از ۵</div></div>
-        <div class="stat final"><div class="stat-label">امتیاز نهایی</div><div class="stat-value" id="finalScore">—</div><div class="stat-sub">از ۱۰۰</div></div>
-      </div>
-      <div class="progress-track"><div class="progress-fill" id="progressFill" style="width:0%"></div></div>
-      <div class="rating-row"><span class="rating-label">سطح عملکرد کلی:</span><span class="rating-chip" id="ratingChip">در انتظار تکمیل</span></div>
-    </div></div>`;
-  html += `<div class="card"><div class="card-head"><h2>💬 بازخورد کیفی</h2></div>
-    <div class="card-body"><div class="feedback-grid">
-      <div class="field"><label>نقاط قوت</label><textarea id="strengths" ${locked?'disabled':''} onchange="saveHeader()">${escapeHtml(ev.strengths||'')}</textarea></div>
-      <div class="field"><label>حوزه‌های نیازمند بهبود</label><textarea id="improvements" ${locked?'disabled':''} onchange="saveHeader()">${escapeHtml(ev.improvements||'')}</textarea></div>
-      <div class="field"><label>اقدامات توسعه پیشنهادی</label><textarea id="actions" ${locked?'disabled':''} onchange="saveHeader()">${escapeHtml(ev.actions||'')}</textarea></div>
-    </div></div></div>`;
-  html += `<div class="card"><div class="card-body" style="display:flex;gap:10px;flex-wrap:wrap;align-items:center">
-    <span class="save-status" id="saveStatus"></span>
-    <button class="btn btn-ghost" onclick="printReport()">🖨 گزارش چاپی</button>
-    <button class="btn btn-ghost" onclick="exportExcel()">⬇ خروجی اکسل</button>
-    ${!locked ? `<button class="btn btn-success" onclick="submitFinal()">✅ ارسال نهایی و قفل کردن</button>` : ''}
-  </div></div>`;
-  mc.innerHTML = html;
-  recalcAll();
-}
-
-function renderSection(key, cat, title, weightPct, colorClass, catLabel, itemMap, locked){
-  const items = FORMS[key][cat];
-  let html = `<div class="card"><div class="card-head"><h2><span class="dot dot-${colorClass}"></span> ${title}</h2><span class="badge badge-${colorClass}">${catLabel} — وزن ${weightPct}٪</span></div><div class="card-body" style="background:#f8fafc">`;
-  items.forEach((item, i) => {
-    const cKey = `${key}_${cat}_${i}`;
-    const saved = itemMap[cKey];
-    html += `<div class="comp-card">
-      <div class="comp-head"><div class="comp-title"><h3>${i+1}. ${escapeHtml(item.name)}</h3><span class="weight-pill">وزن: ${item.weight}٪</span></div><div class="comp-def">${escapeHtml(item.def)}</div></div>
-      <div class="level-list">`;
-    item.levels.forEach((text, li) => {
-      const lvl = li + 1;
-      const checked = saved && !saved.is_na && saved.score === lvl;
-      html += `<label class="level-option ${checked?'selected':''}" data-opt="${cKey}">
-        <input type="radio" name="${cKey}" value="${lvl}" data-calc data-ckey="${cKey}" data-cat="${cat}" ${locked?'disabled':''} ${checked?'checked':''}>
-        <span class="level-num ln${lvl}">${lvl}</span>
-        <span class="level-text"><span class="level-tag">${L_TAGS[li]}</span>${escapeHtml(text)}</span>
-      </label>`;
-    });
-    const naChecked = saved && saved.is_na;
-    html += `<label class="level-option na-option ${naChecked?'selected':''}" data-opt="${cKey}">
-      <input type="radio" name="${cKey}" value="NA" data-calc data-ckey="${cKey}" data-cat="${cat}" ${locked?'disabled':''} ${naChecked?'checked':''}>
-      <span class="level-num">N/A</span>
-      <span class="level-text"><span class="level-tag">قابل ارزیابی نبود</span>این شایستگی در دوره ارزیابی مصداق نداشته و از محاسبه حذف می‌شود.</span>
-    </label></div>
-    <div class="evidence-row">
-      <label>📎 شواهد / مثال عینی</label>
-      <textarea data-evidence="${cKey}" data-cat="${cat}" ${locked?'disabled':''} placeholder="مثال مشخصی که این امتیاز بر آن استوار است...">${escapeHtml(saved?.evidence||'')}</textarea>
-    </div></div>`;
-  });
   html += `</div></div>`;
   return html;
 }
 
-function recalcAll(){
-  const key = currentEmployee.category;
-  const w = CATEGORY_WEIGHTS[key];
-  const beh = calcCategory(key, 'behavioral');
-  const func = calcCategory(key, 'functional');
-  const finalRaw = beh.avg*(w.behavioral/100) + func.avg*(w.functional/100);
-  const final100 = finalRaw*20;
-  const has = beh.filled || func.filled;
-  const behEl = document.getElementById('behAvg');
-  if (!behEl) return;
-  behEl.textContent = beh.filled ? beh.avg.toFixed(2) : '—';
-  document.getElementById('funcAvg').textContent = func.filled ? func.avg.toFixed(2) : '—';
-  document.getElementById('finalScore').textContent = has ? final100.toFixed(1) : '—';
-  document.getElementById('progressFill').style.width = Math.min(100, final100) + '%';
-  const r = getRating(final100);
-  const chip = document.getElementById('ratingChip');
-  chip.textContent = has ? r.label : 'در انتظار تکمیل';
-  chip.className = 'rating-chip ' + (has ? r.class : '');
-}
-
-function calcCategory(key, cat){
-  const items = FORMS[key][cat];
-  let sum=0, weightSum=0, filled=0;
-  items.forEach((item, i) => {
-    const el = document.querySelector(`input[name="${key}_${cat}_${i}"]:checked`);
-    if (!el) return;
-    if (el.value === 'NA') return;
-    const v = parseFloat(el.value);
-    if (!isNaN(v)){ sum += v*item.weight; weightSum += item.weight; filled++; }
+function renderLevelOptions(base, cat, idx, saved){
+  const item = FORMS[currentCategory][cat][idx];
+  let html = '';
+  item.levels.forEach((text, li) => {
+    const lvl = li + 1;
+    const isChecked = saved && !saved.is_na && saved.score === lvl;
+    html += `
+    <label class="level-option ${isChecked ? 'selected':''}" data-opt="${base}">
+      <input type="radio" name="${base}_radio" value="${lvl}" data-calc data-base="${base}" data-cat="${cat}" ${isChecked ? 'checked':''}>
+      <span class="level-num ln${lvl}">${lvl}</span>
+      <span class="level-text"><span class="level-tag">${L_TAGS[li]}</span>${escapeHtml(text)}</span>
+    </label>`;
   });
-  return { avg: weightSum ? sum/weightSum : 0, filled };
+  const isNa = saved && saved.is_na;
+  html += `
+    <label class="level-option na-option ${isNa ? 'selected':''}" data-opt="${base}">
+      <input type="radio" name="${base}_radio" value="NA" data-calc data-base="${base}" data-cat="${cat}" ${isNa ? 'checked':''}>
+      <span class="level-num">N/A</span>
+      <span class="level-text"><span class="level-tag">قابل ارزیابی در این دوره نبود</span>این شایستگی در دوره ارزیابی برای این همکار مصداق نداشته و از محاسبه امتیاز نهایی حذف می‌شود.</span>
+    </label>`;
+  return html;
 }
 
-function getRating(s){
-  if (s >= 95) return { label:'استثنایی و الگوی نقش', class:'rating-excellent' };
-  if (s >= 85) return { label:'فراتر از انتظار', class:'rating-great' };
-  if (s >= 70) return { label:'مطابق انتظار', class:'rating-good' };
-  if (s >= 50) return { label:'کمتر از انتظار', class:'rating-warning' };
-  return { label:'نیازمند بهبود جدی', class:'rating-danger' };
+// بعد از رندر، متن تریگر و chips را پر کن
+function updateTriggerTexts(){
+  if (!currentCategory) return;
+  ['functional','behavioral'].forEach(cat => {
+    FORMS[currentCategory][cat].forEach((item, i) => {
+      const base = `${currentCategory}_${cat}_${i}`;
+      const el = document.querySelector(`input[name="${base}_radio"]:checked`);
+      if (el) updateTriggerText(base, el.value);
+    });
+  });
 }
 
-function setSaveStatus(cls, txt){
-  const el = document.getElementById('saveStatus');
-  if (!el) return;
-  el.className = 'save-status ' + cls;
-  el.textContent = txt;
-  if (cls === 'saved') setTimeout(()=>{ if(el.textContent==='✓ ذخیره شد') el.textContent=''; }, 2500);
+function updateTriggerText(base, val){
+  const triggerText = document.getElementById('triggerText_' + base);
+  const chip = document.getElementById('chip_' + base);
+  if (!triggerText) return;
+  if (val === 'NA'){
+    triggerText.textContent = 'N/A — قابل ارزیابی نبود';
+    triggerText.className = 'bars-trigger-text';
+    chip.textContent = 'امتیاز: N/A';
+    chip.className = 'mini-chip na';
+  } else if (val){
+    const v = parseInt(val);
+    triggerText.textContent = `${v} — ${L_TAGS[v-1]}`;
+    triggerText.className = 'bars-trigger-text selected';
+    chip.textContent = `امتیاز: ${v} — ${L_TAGS[v-1]}`;
+    chip.className = 'mini-chip done';
+  } else {
+    triggerText.textContent = 'انتخاب سطح شایستگی ▼';
+    triggerText.className = 'bars-trigger-text placeholder';
+    chip.textContent = 'امتیاز: —';
+    chip.className = 'mini-chip';
+  }
 }
 
-async function saveHeader(){
-  if (isLocked()) return;
-  setSaveStatus('saving','در حال ذخیره...');
-  const update = {
-    period: document.getElementById('periodInput')?.value || '',
-    strengths: document.getElementById('strengths')?.value || '',
-    improvements: document.getElementById('improvements')?.value || '',
-    actions: document.getElementById('actions')?.value || '',
-    eval_date: new Date().toLocaleDateString('fa-IR'),
-    updated_at: new Date().toISOString()
-  };
-  await saveTotals();
-  const { error } = await sb.from('evaluations').update(update).eq('id', currentEvaluation.id);
-  if (error){ setSaveStatus('','خطا: '+error.message); return; }
-  Object.assign(currentEvaluation, update);
-  setSaveStatus('saved','✓ ذخیره شد');
+function applyViewOnlyState(){
+  if (!isViewOnly) {
+    document.getElementById('submitBtn').classList.remove('hidden');
+    document.getElementById('submitBtn').disabled = false;
+    return;
+  }
+  document.getElementById('submitBtn').classList.add('hidden');
+
+  // قفل کردن همه ورودی‌ها
+  document.querySelectorAll('#competencyContainer input[type="radio"]').forEach(el => el.disabled = true);
+  document.querySelectorAll('#competencyContainer textarea').forEach(el => el.disabled = true);
+  document.querySelectorAll('#competencyContainer .bars-trigger').forEach(el => el.disabled = true);
+  document.getElementById('periodField').disabled = true;
+  document.getElementById('strengthsField').disabled = true;
+  document.getElementById('improvementsField').disabled = true;
+  document.getElementById('actionsField').disabled = true;
+
+  // تغییر پیام hint
+  const hint = document.getElementById('hintBox');
+  const icon = document.getElementById('hintIcon');
+  const txt = document.getElementById('hintText');
+  if (currentEvaluation?.status === 'submitted'){
+    hint.className = 'hint-box good';
+    icon.textContent = '🔒';
+    txt.innerHTML = `<b>این ارزیابی ثبت نهایی شده است.</b> در تاریخ ${currentEvaluation.submitted_at ? new Date(currentEvaluation.submitted_at).toLocaleDateString('fa-IR') : ''} نهایی شده و قابل ویرایش نیست.`;
+  } else if (isManagerMode){
+    hint.className = 'hint-box warn';
+    icon.textContent = '👁';
+    txt.innerHTML = `<b>حالت مشاهده مدیر:</b> این ارزیابی در حالت پیش‌نویس است. شما فقط می‌توانید آن را مشاهده و چاپ کنید.`;
+  }
 }
 
-async function saveItem(cKey, cat){
-  if (isLocked()) return;
-  const key = currentEmployee.category;
-  const idx = parseInt(cKey.split('_').pop());
-  const item = FORMS[key][cat][idx];
-  const el = document.querySelector(`input[name="${cKey}"]:checked`);
-  const evidence = document.querySelector(`textarea[data-evidence="${cKey}"]`)?.value || '';
+// ============================================================
+// Dropdown BARS
+// ============================================================
+function toggleBarsDropdown(ddId, event){
+  if (isViewOnly) return;
+  if (event) event.stopPropagation();
+  const dd = document.getElementById(ddId);
+  const wasOpen = dd.classList.contains('open');
+  document.querySelectorAll('.bars-dropdown.open').forEach(el => { el.classList.remove('open'); el.classList.remove('drop-up'); });
+  if (wasOpen) return;
+
+  const trigger = dd.querySelector('.bars-trigger');
+  const panel = dd.querySelector('.bars-panel');
+  const rect = trigger.getBoundingClientRect();
+  const vh = window.innerHeight;
+  const estimatedPanelHeight = Math.min(panel.scrollHeight || 400, vh * 0.6);
+  const spaceBelow = vh - rect.bottom - 10;
+  const spaceAbove = rect.top - 10;
+
+  if (spaceBelow < estimatedPanelHeight && spaceAbove >= estimatedPanelHeight){
+    dd.classList.add('drop-up');
+  } else if (spaceBelow < estimatedPanelHeight && spaceAbove < estimatedPanelHeight){
+    if (spaceAbove > spaceBelow) dd.classList.add('drop-up');
+  }
+  if (rect.top < 20) window.scrollBy({top: rect.top - 20, behavior: 'smooth'});
+  dd.classList.add('open');
+}
+
+document.addEventListener('click', e => {
+  if (!e.target.closest('.bars-dropdown')){
+    document.querySelectorAll('.bars-dropdown.open').forEach(el => { el.classList.remove('open'); el.classList.remove('drop-up'); });
+  }
+});
+
+// ============================================================
+// انتخاب امتیاز + ذخیره
+// ============================================================
+document.addEventListener('change', async e => {
+  if (e.target.matches('input[type="radio"][data-calc]')){
+    if (isViewOnly) return;
+    const { base, cat } = e.target.dataset;
+    const val = e.target.value;
+    document.querySelectorAll(`input[name="${base}_radio"]`).forEach(inp => {
+      inp.closest('.level-option').classList.toggle('selected', inp.checked);
+    });
+    const dd = e.target.closest('.bars-dropdown');
+    if (dd){ dd.classList.remove('open'); dd.classList.remove('drop-up'); }
+    updateTriggerText(base, val);
+    recalc();
+    await saveItem(base, cat);
+    // اسکرول به بعدی
+    const idx = parseInt(base.split('_').pop());
+    const nextBase = getNextBase(cat, idx);
+    if (nextBase){
+      setTimeout(()=> scrollToCard(nextBase), 200);
+    }
+  }
+  if (e.target.matches('#periodField')){
+    await saveHeader();
+  }
+});
+
+document.addEventListener('input', async e => {
+  if (e.target.matches('textarea[data-base]')){
+    if (isViewOnly) return;
+    clearTimeout(e.target._evTimer);
+    e.target._evTimer = setTimeout(() => saveItem(e.target.dataset.base, e.target.dataset.cat), 800);
+  }
+  if (e.target.id === 'strengthsField' || e.target.id === 'improvementsField' || e.target.id === 'actionsField'){
+    if (isViewOnly) return;
+    clearTimeout(e.target._fbTimer);
+    e.target._fbTimer = setTimeout(saveHeader, 800);
+  }
+});
+
+function getNextBase(cat, idx){
+  const fCount = FORMS[currentCategory].functional.length;
+  const bCount = FORMS[currentCategory].behavioral.length;
+  if (cat === 'functional'){
+    if (idx + 1 < fCount) return `${currentCategory}_functional_${idx+1}`;
+    return `${currentCategory}_behavioral_0`;
+  }
+  if (cat === 'behavioral'){
+    if (idx + 1 < bCount) return `${currentCategory}_behavioral_${idx+1}`;
+    return 'summary';
+  }
+  return null;
+}
+
+function scrollToCard(base){
+  const offset = 90;
+  if (base === 'summary'){
+    const el = document.getElementById('summaryCard');
+    if (el) window.scrollTo({top: el.getBoundingClientRect().top + window.scrollY - offset, behavior: 'smooth'});
+    return;
+  }
+  const el = document.getElementById('card_' + base);
+  if (el) window.scrollTo({top: el.getBoundingClientRect().top + window.scrollY - offset, behavior: 'smooth'});
+}
+
+// ============================================================
+// Save to DB
+// ============================================================
+async function saveItem(base, cat){
+  if (!currentEvaluation || isViewOnly) return;
+  const idx = parseInt(base.split('_').pop());
+  const item = FORMS[currentCategory][cat][idx];
+  const el = document.querySelector(`input[name="${base}_radio"]:checked`);
+  const evidence = document.getElementById(`ev_${base}`)?.value || '';
   const is_na = el ? el.value === 'NA' : false;
   const score = el && el.value !== 'NA' ? parseInt(el.value) : null;
-  setSaveStatus('saving','در حال ذخیره...');
+
+  setSaveStatus('saving', 'در حال ذخیره...');
   const { error } = await sb.from('evaluation_items').upsert({
     evaluation_id: currentEvaluation.id,
-    competency_key: cKey,
+    competency_key: base,
     competency_name: item.name,
     category: cat,
     weight: item.weight,
@@ -444,43 +962,80 @@ async function saveItem(cKey, cat){
     is_na: is_na,
     evidence: evidence
   }, { onConflict: 'evaluation_id,competency_key' });
-  if (error){ setSaveStatus('','خطا: '+error.message); return; }
+  if (error){ setSaveStatus('error', 'خطا: ' + error.message); return; }
   await saveTotals();
-  setSaveStatus('saved','✓ ذخیره شد');
+  setSaveStatus('saved', '✓ ذخیره شد');
+}
+
+async function saveHeader(){
+  if (!currentEvaluation || isViewOnly) return;
+  setSaveStatus('saving', 'در حال ذخیره...');
+  const update = {
+    period: document.getElementById('periodField').value,
+    strengths: document.getElementById('strengthsField').value,
+    improvements: document.getElementById('improvementsField').value,
+    actions: document.getElementById('actionsField').value,
+    eval_date: getTodayShamsi(),
+    updated_at: new Date().toISOString()
+  };
+  const { error } = await sb.from('evaluations').update(update).eq('id', currentEvaluation.id);
+  if (error){ setSaveStatus('error', 'خطا: ' + error.message); return; }
+  Object.assign(currentEvaluation, update);
+  setSaveStatus('saved', '✓ ذخیره شد');
 }
 
 async function saveTotals(){
-  const key = currentEmployee.category;
-  const w = CATEGORY_WEIGHTS[key];
-  const beh = calcCategory(key, 'behavioral');
-  const func = calcCategory(key, 'functional');
-  const finalRaw = beh.avg*(w.behavioral/100) + func.avg*(w.functional/100);
-  const final100 = finalRaw*20;
-  const has = beh.filled || func.filled;
-  const rating = has ? getRating(final100) : null;
+  if (!currentEvaluation) return;
+  const beh = calcCategory('behavioral');
+  const func = calcCategory('functional');
+  const w = CATEGORY_WEIGHTS[currentCategory];
+  const finalScore = func.avg100 * (w.functional/100) + beh.avg100 * (w.behavioral/100);
+  const has = func.filled || beh.filled;
   await sb.from('evaluations').update({
-    beh_avg: beh.filled ? Number(beh.avg.toFixed(2)) : null,
-    func_avg: func.filled ? Number(func.avg.toFixed(2)) : null,
-    final_score: has ? Number(final100.toFixed(1)) : null,
-    rating_label: rating ? rating.label : null,
+    beh_avg: beh.filled ? Number(beh.avg100.toFixed(1)) : null,
+    func_avg: func.filled ? Number(func.avg100.toFixed(1)) : null,
+    final_score: has ? Number(finalScore.toFixed(1)) : null,
     updated_at: new Date().toISOString()
   }).eq('id', currentEvaluation.id);
 }
 
-document.addEventListener('change', e => {
-  if (e.target.matches('input[type="radio"][data-calc]')){
-    const cKey = e.target.dataset.ckey;
-    const cat = e.target.dataset.cat;
-    document.querySelectorAll(`[data-opt="${cKey}"]`).forEach(el => el.classList.toggle('selected', el.querySelector('input').checked));
-    recalcAll();
-    saveItem(cKey, cat);
-  }
-  if (e.target.matches('textarea[data-evidence]')){
-    saveItem(e.target.dataset.evidence, e.target.dataset.cat);
-  }
-});
+// ============================================================
+// Calculation
+// ============================================================
+function calcCategory(cat){
+  const items = FORMS[currentCategory][cat];
+  let sum = 0, wSum = 0, filled = 0, naCount = 0;
+  items.forEach((item, i) => {
+    const base = `${currentCategory}_${cat}_${i}`;
+    const el = document.querySelector(`input[name="${base}_radio"]:checked`);
+    if (!el) return;
+    if (el.value === 'NA'){ naCount++; return; }
+    const v = parseFloat(el.value);
+    if (!isNaN(v)){ sum += v * item.weight; wSum += item.weight; filled++; }
+  });
+  const avg5 = wSum ? sum / wSum : 0;
+  const avg100 = avg5 * 20;
+  return { avg5, avg100, filled, naCount };
+}
 
+function recalc(){
+  if (!currentCategory) return;
+  const w = CATEGORY_WEIGHTS[currentCategory];
+  const beh = calcCategory('behavioral');
+  const func = calcCategory('functional');
+  const finalScore = func.avg100 * (w.functional/100) + beh.avg100 * (w.behavioral/100);
+
+  document.getElementById('funcAvgDisplay').textContent = func.filled ? func.avg100.toFixed(1) : '—';
+  document.getElementById('behAvgDisplay').textContent = beh.filled ? beh.avg100.toFixed(1) : '—';
+  document.getElementById('finalScoreDisplay').textContent = (func.filled || beh.filled) ? finalScore.toFixed(1) : '—';
+  document.getElementById('progressBar').style.width = Math.min(100, finalScore) + '%';
+}
+
+// ============================================================
+// Submit Final
+// ============================================================
 async function submitFinal(){
+  if (!currentEvaluation || isViewOnly) return;
   if (!confirm('آیا مطمئن هستید؟ بعد از ارسال، امکان ویرایش وجود نخواهد داشت.')) return;
   await saveHeader();
   await saveTotals();
@@ -488,147 +1043,248 @@ async function submitFinal(){
     status: 'submitted',
     submitted_at: new Date().toISOString()
   }).eq('id', currentEvaluation.id);
-  if (error){ showToast('خطا: '+error.message,'error'); return; }
-  showToast('✓ ارزیابی با موفقیت ثبت نهایی شد','success');
-  setTimeout(()=> loadDashboard(), 1200);
+  if (error){ showToast('خطا: ' + error.message, 'error'); return; }
+  showToast('✓ ارزیابی با موفقیت ثبت نهایی شد', 'success');
+  currentEvaluation.status = 'submitted';
+  evaluationsMap[currentEmployee.id] = { id: currentEvaluation.id, status: 'submitted', submitted_at: currentEvaluation.submitted_at };
+  isViewOnly = true;
+  applyViewOnlyState();
 }
 
+// ============================================================
+// Print Report
+// ============================================================
 function printReport(){
-  const key = currentEmployee.category;
-  const form = FORMS[key];
-  const w = CATEGORY_WEIGHTS[key];
-  const beh = calcCategory(key,'behavioral');
-  const func = calcCategory(key,'functional');
-  const finalRaw = beh.avg*(w.behavioral/100) + func.avg*(w.functional/100);
-  const final100 = finalRaw*20;
-  const has = beh.filled || func.filled;
-  const rating = has ? getRating(final100) : { label:'در انتظار تکمیل', class:'' };
-  const ev = currentEvaluation;
-  const getVal = (ck, cat) => {
-    const el = document.querySelector(`input[name="${ck}"]:checked`);
-    if (!el) return { s:'—', l:'ثبت نشده', a:'—' };
-    if (el.value === 'NA') return { s:'N/A', l:'قابل ارزیابی نبود', a:'—' };
-    const v = parseInt(el.value);
-    const idx = parseInt(ck.split('_').pop());
-    return { s:v, l:L_TAGS[v-1], a:form[cat][idx].levels[v-1] };
+  if (!currentCategory || !currentEmployee) return;
+  if (!currentEvaluation){
+    alert('هنوز ارزیابی‌ای برای این همکار ثبت نشده است.');
+    return;
+  }
+  const form = FORMS[currentCategory];
+  const w = CATEGORY_WEIGHTS[currentCategory];
+  const beh = calcCategory('behavioral');
+  const func = calcCategory('functional');
+  const finalRaw = func.avg100 * (w.functional/100) + beh.avg100 * (w.behavioral/100);
+
+  const evaluatorProf = allProfiles.find(p => p.id === currentEvaluation.evaluator_id);
+  const info = {
+    unit: currentEmployee.unit || '—',
+    evaluator: evaluatorProf ? (evaluatorProf.full_name || '—') : '—',
+    evaluatee: currentEmployee.full_name,
+    position: currentEmployee.position || '—',
+    level: currentEmployee.job_level || '—',
+    period: document.getElementById('periodField').value || '—',
+    date: getTodayShamsi(),
+    strengths: document.getElementById('strengthsField').value || '—',
+    improvements: document.getElementById('improvementsField').value || '—'
   };
-  const rows = (cat) => form[cat].map((item,i) => {
-    const ck = `${key}_${cat}_${i}`;
-    const { s, l, a } = getVal(ck, cat);
-    const evidence = document.querySelector(`textarea[data-evidence="${ck}"]`)?.value || '—';
-    return `<tr><td style="text-align:center">${i+1}</td>
-      <td><div style="font-weight:700">${escapeHtml(item.name)}</div><div style="font-size:8.5pt;color:#64748b">${escapeHtml(item.def)}</div></td>
-      <td style="text-align:center">${item.weight}٪</td>
-      <td style="text-align:center;font-weight:800;color:#1e40af;font-size:13pt">${s}</td>
-      <td style="text-align:center">${l}</td>
-      <td><div style="font-size:8.5pt">${escapeHtml(a)}</div><div style="font-size:8pt;color:#64748b;margin-top:4px"><b>شواهد:</b> ${escapeHtml(evidence)}</div></td></tr>`;
-  }).join('');
-  const html = `<!DOCTYPE html><html lang="fa" dir="rtl"><head><meta charset="UTF-8"><title>گزارش ارزیابی</title>
-  <link href="https://fonts.googleapis.com/css2?family=Vazirmatn:wght@400;600;700;800&display=swap" rel="stylesheet">
-  <style>*{box-sizing:border-box;margin:0;padding:0}body{font-family:'Vazirmatn',sans-serif;direction:rtl;color:#0f172a;font-size:10.5pt;line-height:1.7;padding:10mm}
-  .hdr{display:flex;justify-content:space-between;background:linear-gradient(135deg,#1e3a8a,#3b82f6);color:#fff;padding:14px 20px;border-radius:10px;margin-bottom:16px}
-  .hdr h1{font-size:15pt}.info{display:grid;grid-template-columns:1fr 1fr;gap:8px 20px;background:#f8fafc;border:1px solid #e2e8f0;border-radius:8px;padding:12px 16px;margin-bottom:18px}
-  .info>div{display:flex;gap:8px}.info b{color:#64748b;min-width:100px;font-size:9pt}
-  .section{background:#1e40af;color:#fff;padding:8px 14px;font-size:11pt;font-weight:700;border-radius:6px 6px 0 0;-webkit-print-color-adjust:exact;print-color-adjust:exact}
-  .section.beh{background:#7c3aed}.section.func{background:#0284c7}
-  table{width:100%;border-collapse:collapse;margin-bottom:16px;border:1px solid #e2e8f0;border-top:none;font-size:9.5pt}
-  th{background:#f1f5f9;padding:8px;text-align:right;font-size:9pt;border-bottom:2px solid #cbd5e1}
-  td{padding:9px 10px;border-bottom:1px solid #e2e8f0;vertical-align:top}
-  .summary{display:grid;grid-template-columns:repeat(4,1fr);gap:10px;margin:18px 0}
-  .sc{background:#f8fafc;border:1px solid #e2e8f0;border-radius:8px;padding:12px;text-align:center}
-  .sc .l{font-size:8.5pt;color:#64748b;font-weight:600;margin-bottom:6px}.sc .v{font-size:18pt;font-weight:800}
-  .sc.beh .v{color:#7c3aed}.sc.func .v{color:#0284c7}.sc.fin .v{color:#1e40af;font-size:20pt}
-  .fb{border:1px solid #e2e8f0;border-radius:8px;padding:12px 16px;margin-bottom:10px;background:#fafbfc}
-  .fb .t{font-size:10pt;font-weight:700;color:#1e40af;margin-bottom:6px}.fb .c{font-size:9.5pt;line-height:1.85;white-space:pre-wrap}
-  .sigs{display:grid;grid-template-columns:repeat(3,1fr);gap:20px;margin-top:30px;padding-top:14px;border-top:1px dashed #cbd5e1}
-  .sig{text-align:center}.sig .line{border-bottom:1px solid #94a3b8;height:50px;margin-bottom:6px}.sig .lbl{font-size:9pt;color:#64748b;font-weight:600}
-  @media print{@page{size:A4;margin:10mm}tr{page-break-inside:avoid}}</style></head><body>
-  <div class="hdr"><div><h1>گزارش ارزیابی عملکرد</h1><div style="font-size:9pt;opacity:.9">${form.title} — BARS</div></div>
-  <div style="text-align:left;font-size:9.5pt">تاریخ چاپ: ${new Date().toLocaleDateString('fa-IR')}<br>دوره: ${escapeHtml(ev.period||'—')}</div></div>
-  <div class="info">
-    <div><b>نام:</b> ${escapeHtml(currentEmployee.full_name)}</div>
-    <div><b>سمت:</b> ${escapeHtml(currentEmployee.position||'—')}</div>
-    <div><b>سطح:</b> ${escapeHtml(currentEmployee.job_level||'—')}</div>
-    <div><b>واحد:</b> ${escapeHtml(currentEmployee.unit||'—')}</div>
-    <div><b>ارزیاب:</b> ${escapeHtml(currentProfile.full_name||'')}</div>
-    <div><b>وضعیت:</b> ${ev.status==='submitted'?'ثبت نهایی':'پیش‌نویس'}</div>
+
+  function buildCompactRows(cat){
+    return form[cat].map((item, i) => {
+      const base = `${currentCategory}_${cat}_${i}`;
+      const el = document.querySelector(`input[name="${base}_radio"]:checked`);
+      let scoreDisplay = '—';
+      let isNA = false;
+      if (el){
+        if (el.value === 'NA'){ scoreDisplay = 'N/A'; isNA = true; }
+        else { scoreDisplay = `${el.value}/5`; }
+      }
+      return `<li>
+        <span class="cn">${escapeHtml(item.name)}</span>
+        <span class="cw">${item.weight}٪</span>
+        <span class="cs${isNA ? ' na' : ''}">${scoreDisplay}</span>
+      </li>`;
+    }).join('');
+  }
+
+  const reportDate = getTodayShamsi();
+
+  const html = `<!DOCTYPE html>
+<html lang="fa" dir="rtl">
+<head>
+<meta charset="UTF-8">
+<title>کارنامه عملکرد همکار</title>
+<link href="https://fonts.googleapis.com/css2?family=Vazirmatn:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+<style>
+  *{box-sizing:border-box;margin:0;padding:0}
+  body{font-family:'Vazirmatn',system-ui,sans-serif;direction:rtl;color:#0f172a;font-size:9.5pt;line-height:1.55;background:#fff;padding:8mm}
+  .card-wrap{border:1.5px solid #1e40af;border-radius:10px;overflow:hidden}
+  .header{background:linear-gradient(135deg,#1e3a8a,#1e40af,#3b82f6);color:#fff;padding:10px 18px;display:flex;justify-content:space-between;align-items:center;-webkit-print-color-adjust:exact;print-color-adjust:exact}
+  .header h1{font-size:13.5pt;font-weight:800}
+  .header .sub{font-size:8.5pt;opacity:.92;margin-top:2px}
+  .header .right{text-align:left;font-size:8.5pt;line-height:1.65}
+  .header .right b{font-weight:700}
+  .info-strip{display:grid;grid-template-columns:repeat(3,1fr);gap:3px 18px;padding:9px 18px;background:#f8fafc;border-bottom:1px solid #e2e8f0;-webkit-print-color-adjust:exact;print-color-adjust:exact}
+  .info-item{display:flex;gap:6px;font-size:9pt;align-items:baseline}
+  .info-item .lbl{color:#64748b;font-weight:600;font-size:8.5pt;white-space:nowrap}
+  .info-item .val{color:#0f172a;font-weight:700;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+  .score-section{display:grid;grid-template-columns:1fr 1fr 1.25fr;border-bottom:1px solid #e2e8f0}
+  .score-cell{padding:12px 10px 14px;text-align:center;border-left:1px solid #e2e8f0}
+  .score-cell:first-child{border-left:none}
+  .score-cell .lbl{font-size:8pt;color:#64748b;font-weight:600;margin-bottom:5px}
+  .score-cell .num{font-size:22pt;font-weight:800;line-height:1;letter-spacing:-1px}
+  .score-cell .sub{font-size:7.5pt;color:#94a3b8;margin-top:4px}
+  .score-cell.beh .num{color:#7c3aed}
+  .score-cell.func .num{color:#0284c7}
+  .score-cell.final{background:linear-gradient(180deg,#eff6ff,#fff);-webkit-print-color-adjust:exact;print-color-adjust:exact}
+  .score-cell.final .num{color:#1e40af;font-size:27pt}
+  .score-cell.final .lbl{color:#1e40af;font-weight:700}
+  .comp-section{padding:10px 18px 11px;border-bottom:1px solid #e2e8f0}
+  .comp-section-title{font-size:9pt;font-weight:700;color:#0f172a;margin-bottom:7px;display:flex;align-items:center;gap:7px}
+  .comp-section-title .dot{width:7px;height:7px;border-radius:50%;display:inline-block}
+  .comp-section-title.func .dot{background:#0284c7}
+  .comp-section-title.beh .dot{background:#7c3aed}
+  .comp-section-title .w-badge{margin-right:auto;font-size:8pt;font-weight:600;color:#64748b;background:#f1f5f9;padding:2px 10px;border-radius:20px}
+  .comp-grid{display:grid;grid-template-columns:1fr 1fr;gap:0 22px;list-style:none}
+  .comp-grid li{display:flex;align-items:center;font-size:8.5pt;padding:3.5px 0;border-bottom:1px dotted #e2e8f0}
+  .comp-grid .cn{flex:1;color:#334155;font-weight:500;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+  .comp-grid .cw{color:#94a3b8;font-size:7.5pt;margin-right:6px;min-width:30px;text-align:left}
+  .comp-grid .cs{font-weight:800;color:#1e40af;min-width:32px;text-align:center;font-size:9pt}
+  .comp-grid .cs.na{color:#94a3b8;font-size:7.5pt;font-weight:600}
+  .fb-section{display:grid;grid-template-columns:1fr 1fr;border-bottom:1px solid #e2e8f0}
+  .fb-cell{padding:10px 18px;font-size:8.5pt;color:#334155;line-height:1.65}
+  .fb-cell:first-child{border-left:1px solid #e2e8f0}
+  .fb-cell .fb-lbl{font-size:8.5pt;font-weight:700;margin-bottom:4px}
+  .fb-cell .fb-lbl.good{color:#047857}
+  .fb-cell .fb-lbl.warn{color:#b45309}
+  .fb-cell .fb-content{white-space:pre-wrap}
+  .sign-section{padding:12px 18px 14px;display:grid;grid-template-columns:1fr 1fr;gap:30px}
+  .sign-box{text-align:center}
+  .sign-line{height:34px;border-bottom:1px solid #94a3b8;margin-bottom:5px}
+  .sign-lbl{font-size:8.5pt;color:#64748b;font-weight:600}
+  .sign-name{font-size:7.5pt;color:#94a3b8;margin-top:2px}
+  .footer{padding:7px 18px;background:#eff6ff;border-top:1px solid #dbeafe;text-align:center;font-size:7.5pt;color:#1e40af;line-height:1.7;-webkit-print-color-adjust:exact;print-color-adjust:exact}
+  .footer .line1{margin-bottom:2px}
+  .footer .line2{font-weight:700}
+  @media print{@page{size:A4;margin:8mm}body{padding:0}.card-wrap{page-break-inside:avoid}}
+</style>
+</head>
+<body>
+  <div class="card-wrap">
+    <div class="header">
+      <div>
+        <h1>کارنامه عملکرد همکار (در سطح فردی)</h1>
+        <div class="sub">${form.title} — ارزیابی مبتنی بر انکورهای رفتاری (BARS)</div>
+      </div>
+      <div class="right">تاریخ چاپ: <b>${reportDate}</b><br>دوره ارزیابی: <b>${info.period}</b></div>
+    </div>
+    <div class="info-strip">
+      <div class="info-item"><span class="lbl">واحد سازمانی:</span><span class="val">${escapeHtml(info.unit)}</span></div>
+      <div class="info-item"><span class="lbl">ارزیاب:</span><span class="val">${escapeHtml(info.evaluator)}</span></div>
+      <div class="info-item"><span class="lbl">ارزیابی‌شونده:</span><span class="val">${escapeHtml(info.evaluatee)}</span></div>
+      <div class="info-item"><span class="lbl">عنوان شغلی:</span><span class="val">${escapeHtml(info.position)}</span></div>
+      <div class="info-item"><span class="lbl">سطح سازمانی:</span><span class="val">${escapeHtml(info.level)}</span></div>
+      <div class="info-item"><span class="lbl">تاریخ ارزیابی:</span><span class="val">${escapeHtml(info.date)}</span></div>
+    </div>
+    <div class="score-section">
+      <div class="score-cell func">
+        <div class="lbl">میانگین وزنی عملکردی</div>
+        <div class="num">${func.filled ? func.avg100.toFixed(1) : '—'}</div>
+        <div class="sub">از ۱۰۰ — وزن ${w.functional}٪</div>
+      </div>
+      <div class="score-cell beh">
+        <div class="lbl">میانگین وزنی رفتاری</div>
+        <div class="num">${beh.filled ? beh.avg100.toFixed(1) : '—'}</div>
+        <div class="sub">از ۱۰۰ — وزن ${w.behavioral}٪</div>
+      </div>
+      <div class="score-cell final">
+        <div class="lbl">امتیاز نهایی</div>
+        <div class="num">${(func.filled || beh.filled) ? finalRaw.toFixed(1) : '—'}</div>
+        <div class="sub">از ۱۰۰</div>
+      </div>
+    </div>
+    <div class="comp-section">
+      <div class="comp-section-title func"><span class="dot"></span>شایستگی‌های عملکردی <span class="w-badge">وزن ${w.functional}٪</span></div>
+      <ul class="comp-grid">${buildCompactRows('functional')}</ul>
+    </div>
+    <div class="comp-section">
+      <div class="comp-section-title beh"><span class="dot"></span>شایستگی‌های رفتاری <span class="w-badge">وزن ${w.behavioral}٪</span></div>
+      <ul class="comp-grid">${buildCompactRows('behavioral')}</ul>
+    </div>
+    <div class="fb-section">
+      <div class="fb-cell"><div class="fb-lbl good">✅ نقاط قوت همکار</div><div class="fb-content">${escapeHtml(info.strengths)}</div></div>
+      <div class="fb-cell"><div class="fb-lbl warn">📈 حوزه‌های نیازمند بهبود</div><div class="fb-content">${escapeHtml(info.improvements)}</div></div>
+    </div>
+    <div class="sign-section">
+      <div class="sign-box"><div class="sign-line"></div><div class="sign-lbl">امضای ارزیاب (مدیر مستقیم)</div><div class="sign-name">${escapeHtml(info.evaluator)}</div></div>
+      <div class="sign-box"><div class="sign-line"></div><div class="sign-lbl">اطلاع و تأیید ارزیابی‌شونده</div><div class="sign-name">${escapeHtml(info.evaluatee)}</div></div>
+    </div>
+    <div class="footer">
+      <div class="line1">این کارنامه بر اساس مقیاس BARS (مقیاس درجه‌بندی مبتنی بر انکورهای رفتاری) تنظیم شده است.</div>
+      <div class="line2">مدیریت منابع انسانی</div>
+    </div>
   </div>
-  <div class="section beh">شایستگی‌های رفتاری (وزن ${w.behavioral}٪)</div>
-  <table><thead><tr><th>#</th><th>شایستگی</th><th>وزن</th><th>امتیاز</th><th>سطح</th><th>انکور / شواهد</th></tr></thead><tbody>${rows('behavioral')}</tbody></table>
-  <div class="section func">شایستگی‌های عملکردی (وزن ${w.functional}٪)</div>
-  <table><thead><tr><th>#</th><th>شایستگی</th><th>وزن</th><th>امتیاز</th><th>سطح</th><th>انکور / شواهد</th></tr></thead><tbody>${rows('functional')}</tbody></table>
-  <div class="section" style="background:#1e40af">جمع‌بندی</div><div style="height:14px"></div>
-  <div class="summary">
-    <div class="sc beh"><div class="l">میانگین رفتاری</div><div class="v">${beh.filled?beh.avg.toFixed(2):'—'}</div></div>
-    <div class="sc func"><div class="l">میانگین عملکردی</div><div class="v">${func.filled?func.avg.toFixed(2):'—'}</div></div>
-    <div class="sc fin"><div class="l">امتیاز نهایی</div><div class="v">${has?final100.toFixed(1):'—'}</div></div>
-    <div class="sc"><div class="l">سطح عملکرد</div><div class="v" style="font-size:11pt;padding-top:6px">${rating.label}</div></div>
-  </div>
-  <div class="section" style="background:#0f766e">بازخورد و توسعه</div><div style="height:14px"></div>
-  <div class="fb"><div class="t">✅ نقاط قوت</div><div class="c">${escapeHtml(ev.strengths||'—')}</div></div>
-  <div class="fb"><div class="t">📈 نیازمند بهبود</div><div class="c">${escapeHtml(ev.improvements||'—')}</div></div>
-  <div class="fb"><div class="t">🎯 اقدامات توسعه</div><div class="c">${escapeHtml(ev.actions||'—')}</div></div>
-  <div class="sigs">
-    <div class="sig"><div class="line"></div><div class="lbl">امضای ارزیاب</div></div>
-    <div class="sig"><div class="line"></div><div class="lbl">تأیید ارزیابی‌شونده</div></div>
-    <div class="sig"><div class="line"></div><div class="lbl">تأیید مدیر ارشد</div></div>
-  </div></body></html>`;
+</body>
+</html>`;
+
   const iframe = document.createElement('iframe');
+  iframe.id = 'printIframe';
   iframe.style.cssText = 'position:fixed;width:0;height:0;border:0;';
   document.body.appendChild(iframe);
-  iframe.contentWindow.document.open();
-  iframe.contentWindow.document.write(html);
-  iframe.contentWindow.document.close();
-  setTimeout(()=>{ iframe.contentWindow.focus(); iframe.contentWindow.print(); setTimeout(()=>iframe.remove(), 2000); }, 500);
+  const doc = iframe.contentWindow.document;
+  doc.open(); doc.write(html); doc.close();
+  setTimeout(() => {
+    try { iframe.contentWindow.focus(); iframe.contentWindow.print(); } catch(e){}
+    setTimeout(() => { const el = document.getElementById('printIframe'); if (el) el.remove(); }, 2000);
+  }, 600);
 }
 
+// ============================================================
+// Export Excel
+// ============================================================
 function exportExcel(){
-  const key = currentEmployee.category;
-  const form = FORMS[key];
-  const w = CATEGORY_WEIGHTS[key];
-  const ev = currentEvaluation;
+  if (!currentCategory || !currentEmployee || !currentEvaluation) return;
+  const form = FORMS[currentCategory];
+  const w = CATEGORY_WEIGHTS[currentCategory];
+  const beh = calcCategory('behavioral');
+  const func = calcCategory('functional');
+  const finalRaw = func.avg100 * (w.functional/100) + beh.avg100 * (w.behavioral/100);
+  const evaluatorProf = allProfiles.find(p => p.id === currentEvaluation.evaluator_id);
+
   const aoa = [];
-  aoa.push([`فرم ارزیابی عملکرد — ${form.title}`]);
+  aoa.push([`کارنامه ارزیابی عملکرد — ${form.title}`]);
   aoa.push([]);
-  aoa.push(['نام', currentEmployee.full_name, 'سمت', currentEmployee.position||'']);
-  aoa.push(['سطح', currentEmployee.job_level||'', 'واحد', currentEmployee.unit||'']);
-  aoa.push(['ارزیاب', currentProfile.full_name||'', 'دوره', ev.period||'']);
-  aoa.push(['وضعیت', ev.status==='submitted'?'ثبت نهایی':'پیش‌نویس']);
+  aoa.push(['واحد', currentEmployee.unit || '', 'ارزیاب', evaluatorProf ? evaluatorProf.full_name : '']);
+  aoa.push(['ارزیابی‌شونده', currentEmployee.full_name, 'عنوان شغلی', currentEmployee.position || '']);
+  aoa.push(['سطح', currentEmployee.job_level || '', 'دوره', document.getElementById('periodField').value]);
+  aoa.push(['تاریخ', getTodayShamsi()]);
   aoa.push([]);
-  aoa.push(['دسته','شایستگی','تعریف','وزن','امتیاز','سطح','شواهد']);
-  const push = (cat, label) => form[cat].forEach((item,i) => {
-    const ck = `${key}_${cat}_${i}`;
-    const el = document.querySelector(`input[name="${ck}"]:checked`);
+  aoa.push(['دسته','شایستگی','تعریف','وزن','امتیاز (۱-۵)','سطح','شواهد']);
+  const push = (cat, label) => form[cat].forEach((item, i) => {
+    const base = `${currentCategory}_${cat}_${i}`;
+    const el = document.querySelector(`input[name="${base}_radio"]:checked`);
     let score='', lvl='';
     if (el){
       if (el.value==='NA'){ score='N/A'; lvl='قابل ارزیابی نبود'; }
       else { score = parseInt(el.value); lvl = L_TAGS[score-1]; }
     }
-    const evidence = document.querySelector(`textarea[data-evidence="${ck}"]`)?.value || '';
-    aoa.push([label, item.name, item.def, item.weight, score, lvl, evidence]);
+    aoa.push([label, item.name, item.def, item.weight, score, lvl, document.getElementById(`ev_${base}`)?.value || '']);
   });
-  push('behavioral','رفتاری'); push('functional','عملکردی');
-  const beh = calcCategory(key,'behavioral');
-  const func = calcCategory(key,'functional');
-  const finalRaw = beh.avg*(w.behavioral/100) + func.avg*(w.functional/100);
-  const final100 = finalRaw*20;
-  const has = beh.filled || func.filled;
+  push('functional','عملکردی');
+  push('behavioral','رفتاری');
   aoa.push([]);
-  aoa.push(['میانگین رفتاری', beh.filled?Number(beh.avg.toFixed(2)):'']);
-  aoa.push(['میانگین عملکردی', func.filled?Number(func.avg.toFixed(2)):'']);
-  aoa.push(['امتیاز نهایی', has?Number(final100.toFixed(1)):'']);
-  aoa.push(['سطح عملکرد', has?getRating(final100).label:'']);
+  aoa.push(['میانگین عملکردی', func.filled ? Number(func.avg100.toFixed(1)) : '']);
+  aoa.push(['میانگین رفتاری', beh.filled ? Number(beh.avg100.toFixed(1)) : '']);
+  aoa.push(['امتیاز نهایی', (func.filled || beh.filled) ? Number(finalRaw.toFixed(1)) : '']);
   aoa.push([]);
-  aoa.push(['نقاط قوت', ev.strengths||'']);
-  aoa.push(['نیازمند بهبود', ev.improvements||'']);
-  aoa.push(['اقدامات توسعه', ev.actions||'']);
+  aoa.push(['نقاط قوت', document.getElementById('strengthsField').value || '']);
+  aoa.push(['نیازمند بهبود', document.getElementById('improvementsField').value || '']);
+  aoa.push(['اقدامات توسعه', document.getElementById('actionsField').value || '']);
+
   const ws = XLSX.utils.aoa_to_sheet(aoa);
-  ws['!cols'] = [{wch:10},{wch:30},{wch:60},{wch:9},{wch:11},{wch:22},{wch:40}];
+  ws['!cols'] = [{wch:10},{wch:30},{wch:60},{wch:9},{wch:12},{wch:22},{wch:40}];
   const wb = XLSX.utils.book_new();
   XLSX.utils.book_append_sheet(wb, ws, 'ارزیابی');
   const d = new Date();
-  XLSX.writeFile(wb, `ارزیابی_${currentEmployee.full_name}_${d.getFullYear()}${String(d.getMonth()+1).padStart(2,'0')}${String(d.getDate()).padStart(2,'0')}.xlsx`);
+  XLSX.writeFile(wb, `کارنامه_${currentEmployee.full_name}_${d.getFullYear()}${String(d.getMonth()+1).padStart(2,'0')}${String(d.getDate()).padStart(2,'0')}.xlsx`);
 }
+
+// بعد از رندر فرم، متن تریگرها رو پر کن
+const origRenderForm = renderForm;
+renderForm = function(items){
+  origRenderForm(items);
+  setTimeout(updateTriggerTexts, 50);
+};
 
 checkSession();
 </script>
