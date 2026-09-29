@@ -16,6 +16,10 @@
   .login-card{background:#fff;border-radius:20px;padding:40px 36px;max-width:420px;width:100%;box-shadow:0 20px 60px rgba(0,0,0,.2)}
   .login-card .logo{font-size:48px;text-align:center;margin-bottom:10px}
   .login-card h1{text-align:center;font-size:20px;color:var(--primary-dark);margin-bottom:24px}
+  .field{margin-bottom:14px}
+  .field label{display:block;font-size:12.5px;font-weight:600;color:var(--muted);margin-bottom:6px}
+  .field input,.field select,.field textarea{width:100%;font-family:inherit;font-size:13.5px;padding:10px 12px;border:1px solid var(--border);border-radius:8px}
+  .field input:focus,.field select:focus,.field textarea:focus{outline:none;border-color:var(--primary-light);box-shadow:0 0 0 3px rgba(59,130,246,.12)}
   .app-header{background:linear-gradient(135deg,var(--primary-dark),var(--primary));color:#fff;padding:16px 0}
   .header-inner{max-width:1320px;margin:0 auto;padding:0 24px;display:flex;justify-content:space-between;align-items:center;gap:16px;flex-wrap:wrap}
   .brand{display:flex;align-items:center;gap:12px}
@@ -30,10 +34,6 @@
   .btn-primary:hover{background:var(--primary-dark)}
   .btn-ghost{background:#fff;color:var(--text);border-color:var(--border)}
   .btn-ghost:hover{background:#f8fafc}
-  .field{margin-bottom:14px}
-  .field label{display:block;font-size:12.5px;font-weight:600;color:var(--muted);margin-bottom:6px}
-  .field input,.field select,.field textarea{width:100%;font-family:inherit;font-size:13.5px;padding:10px 12px;border:1px solid var(--border);border-radius:8px}
-  .field input:focus,.field select:focus,.field textarea:focus{outline:none;border-color:var(--primary-light);box-shadow:0 0 0 3px rgba(59,130,246,.12)}
   .grid2{display:grid;grid-template-columns:1fr 1fr;gap:16px}
   .grid3{display:grid;grid-template-columns:1fr 1fr 1fr;gap:16px}
   table{width:100%;border-collapse:collapse;font-size:13px}
@@ -54,10 +54,13 @@
   .toast.success{background:var(--success)}
   .badge{font-size:11px;font-weight:700;padding:3px 10px;border-radius:20px;background:#f1f5f9;color:var(--muted)}
   .badge-admin{background:rgba(139,92,246,.15);color:#8b5cf6}
+  .badge-manager{background:rgba(245,158,11,.15);color:#b45309}
+  .badge-senior{background:rgba(239,68,68,.15);color:#dc2626}
+  .badge-evaluator{background:rgba(59,130,246,.15);color:var(--primary)}
   .badge-active{background:rgba(16,185,129,.15);color:var(--success)}
   .hint{background:#eff6ff;border:1px solid #bfdbfe;border-radius:8px;padding:12px 16px;font-size:12.5px;color:#1e40af;line-height:1.85;margin-bottom:16px}
   .modal-back{position:fixed;inset:0;background:rgba(15,23,42,.6);display:flex;align-items:center;justify-content:center;z-index:200;padding:20px}
-  .modal{background:#fff;border-radius:var(--radius);max-width:600px;width:100%;max-height:90vh;overflow:auto;padding:26px}
+  .modal{background:#fff;border-radius:var(--radius);max-width:640px;width:100%;max-height:90vh;overflow:auto;padding:26px}
   .modal h3{font-size:16px;margin-bottom:16px}
   .csv-area{width:100%;min-height:180px;font-family:monospace;font-size:12.5px;padding:12px;border:1px solid var(--border);border-radius:8px;direction:ltr;text-align:left}
   @media(max-width:640px){.grid2,.grid3{grid-template-columns:1fr}.content{padding:16px}}
@@ -70,7 +73,7 @@
     <div class="logo">⚙️</div>
     <h1>ورود به پنل ادمین</h1>
     <div class="field"><label>ایمیل</label><input type="email" id="loginEmail" dir="ltr"></div>
-    <div class="field"><label>رمز عبور</label><input type="password" id="loginPassword" dir="ltr"></div>
+    <div class="field"><label>رمز عبور</label><input type="password" id="loginPassword" dir="ltr" onkeydown="if(event.key==='Enter')doLogin()"></div>
     <button class="btn btn-primary" style="width:100%;justify-content:center" onclick="doLogin()">ورود</button>
     <div id="loginError" style="color:var(--danger);font-size:13px;margin-top:12px;text-align:center"></div>
   </div>
@@ -81,7 +84,8 @@
     <div class="header-inner">
       <div class="brand"><div style="font-size:22px">⚙️</div><div><h1>پنل مدیریت سامانه ارزیابی</h1></div></div>
       <div style="display:flex;gap:8px;flex-wrap:wrap">
-        <a href="index.html" class="btn btn-ghost">🏠 فرم ارزیابی</a>
+        <a href="index.html" class="btn btn-ghost">📝 فرم ارزیابی</a>
+        <a href="manager.html" class="btn btn-ghost">👔 پنل مدیر</a>
         <button class="btn btn-ghost" onclick="logout()">🚪 خروج</button>
       </div>
     </div>
@@ -89,7 +93,7 @@
   <main class="content">
     <div class="tabs">
       <div class="tab active" data-tab="employees" onclick="switchTab('employees')">👥 پرسنل</div>
-      <div class="tab" data-tab="evaluators" onclick="switchTab('evaluators')">👤 ارزیاب‌ها</div>
+      <div class="tab" data-tab="evaluators" onclick="switchTab('evaluators')">👤 کاربران</div>
       <div class="tab" data-tab="stats" onclick="switchTab('stats')">📊 آمار</div>
     </div>
     <div id="tabContent"></div>
@@ -161,6 +165,9 @@ function switchTab(t){
   if (t === 'stats') renderStats();
 }
 
+// ============================================================
+// Employees Tab
+// ============================================================
 function renderEmployees(){
   let html = `<div class="card">
     <div class="card-head"><h2>👥 مدیریت پرسنل</h2>
@@ -171,10 +178,10 @@ function renderEmployees(){
     </div>
     <div class="card-body" style="padding:0">`;
   if (!employees.length){
-    html += `<div style="padding:40px;text-align:center;color:var(--muted)">هنوز پرسنلی ثبت نشده. با دکمه بالا اضافه کنید.</div>`;
+    html += `<div style="padding:40px;text-align:center;color:var(--muted)">هنوز پرسنلی ثبت نشده.</div>`;
   } else {
     html += `<table><thead><tr>
-      <th>نام</th><th>کد پرسنلی</th><th>سمت</th><th>سطح</th><th>واحد</th><th>دسته</th><th>ارزیاب</th><th>وضعیت</th><th></th>
+      <th>نام</th><th>کد</th><th>سمت</th><th>سطح</th><th>واحد</th><th>دسته</th><th>ارزیاب</th><th>وضعیت</th><th></th>
     </tr></thead><tbody>`;
     employees.forEach(e => {
       const ev = evaluations.find(x => x.employee_id === e.id);
@@ -204,7 +211,8 @@ function renderEmployees(){
 }
 
 function employeeForm(e = {}){
-  const evalOptions = profiles.map(p => `<option value="${p.id}" ${e.evaluator_id===p.id?'selected':''}>${escapeHtml(p.full_name||'')} ${p.role==='admin'?'(ادمین)':''}</option>`).join('');
+  const eligible = profiles.filter(p => p.role === 'evaluator' || p.role === 'manager' || p.role === 'senior_manager' || p.role === 'admin');
+  const evalOptions = eligible.map(p => `<option value="${p.id}" ${e.evaluator_id===p.id?'selected':''}>${escapeHtml(p.full_name||'')} (${p.role})</option>`).join('');
   return `
     <div class="grid2">
       <div class="field"><label>نام و نام خانوادگی *</label><input id="f_full_name" value="${escapeHtml(e.full_name||'')}"></div>
@@ -212,7 +220,7 @@ function employeeForm(e = {}){
     </div>
     <div class="grid2">
       <div class="field"><label>سمت / عنوان شغلی</label><input id="f_position" value="${escapeHtml(e.position||'')}"></div>
-      <div class="field"><label>واحد / بخش</label><input id="f_unit" value="${escapeHtml(e.unit||'')}"></div>
+      <div class="field"><label>واحد / بخش *</label><input id="f_unit" value="${escapeHtml(e.unit||'')}" placeholder="مثلاً: فناوری اطلاعات"></div>
     </div>
     <div class="grid3">
       <div class="field"><label>سطح شغلی</label>
@@ -252,6 +260,7 @@ function openAddEmployee(){
       is_active: document.getElementById('f_is_active').value === 'true'
     };
     if (!data.full_name){ alert('نام الزامیست'); return false; }
+    if (!data.unit){ alert('واحد الزامیست'); return false; }
     if (!data.evaluator_id){ alert('انتخاب ارزیاب الزامیست'); return false; }
     const { error } = await sb.from('employees').insert(data);
     if (error){ alert('خطا: '+error.message); return false; }
@@ -284,7 +293,7 @@ function openEditEmployee(id){
 }
 
 async function deleteEmployee(id){
-  if (!confirm('آیا مطمئنید؟ این پرسنل حذف می‌شود.')) return;
+  if (!confirm('آیا مطمئنید؟ این پرسنل و ارزیابی‌های مربوطه حذف می‌شوند.')) return;
   const { error } = await sb.from('employees').delete().eq('id', id);
   if (error){ showToast('خطا: '+error.message,'error'); return; }
   showToast('حذف شد','success');
@@ -294,12 +303,12 @@ async function deleteEmployee(id){
 function openBulkUpload(){
   const body = `
     <div class="hint">
-      <b>راهنما:</b> هر خط یک پرسنل. مقادیر را با کاما جدا کنید. ترتیب ستون‌ها:<br>
+      <b>راهنما:</b> هر خط یک پرسنل. مقادیر را با کاما جدا کنید.<br>
       <code style="direction:ltr;display:inline-block;background:#fff;padding:4px 8px;border-radius:4px;margin:6px 0">نام, کد پرسنلی, سمت, سطح, واحد, دسته (technical/staff), نام ارزیاب</code><br>
-      سطر اول (هدر) اختیاری است. نام ارزیاب باید دقیقاً با یکی از ارزیاب‌های موجود مطابقت داشته باشد.
+      سطر اول (هدر) اختیاری است. نام ارزیاب باید دقیقاً با یکی از کاربران موجود مطابقت داشته باشد.
     </div>
-    <textarea class="csv-area" id="csvInput" placeholder="علی رضایی,1001,مهندس نرم‌افزار,میانی,فناوری اطلاعات,technical,مدیر تست
-مریم احمدی,1002,کارشناس اداری,جونیور,منابع انسانی,staff,مدیر تست"></textarea>`;
+    <textarea class="csv-area" id="csvInput" placeholder="محمد احمدی,1001,کارشناس ارشد نرم‌افزار,سنیور,فناوری اطلاعات,technical,علی رضایی
+سارا کریمی,1002,کارشناس نرم‌افزار,میانی,فناوری اطلاعات,technical,علی رضایی"></textarea>`;
   showModal('افزودن گروهی پرسنل', body, async () => {
     const raw = document.getElementById('csvInput').value.trim();
     if (!raw){ alert('محتوایی وارد نشده'); return false; }
@@ -316,6 +325,7 @@ function openBulkUpload(){
       const [name, code, pos, level, unit, cat, evalName] = r;
       const evaluatorId = nameMap[evalName];
       if (!name){ errors.push(`سطر ${i+1}: نام خالی`); return; }
+      if (!unit){ errors.push(`سطر ${i+1}: واحد خالی`); return; }
       if (!['technical','staff'].includes(cat)){ errors.push(`سطر ${i+1}: دسته نامعتبر "${cat}"`); return; }
       if (!evaluatorId){ errors.push(`سطر ${i+1}: ارزیاب "${evalName}" پیدا نشد`); return; }
       inserts.push({ full_name:name, personnel_code:code, position:pos, job_level:level, unit, category:cat, evaluator_id:evaluatorId, is_active:true });
@@ -333,49 +343,63 @@ function openBulkUpload(){
   }, true);
 }
 
+// ============================================================
+// Users Tab
+// ============================================================
 function renderEvaluators(){
   let html = `<div class="card">
-    <div class="card-head"><h2>👤 لیست ارزیاب‌ها</h2>
+    <div class="card-head"><h2>👤 کاربران سیستم</h2>
       <span class="badge">${profiles.length} نفر</span>
     </div>
     <div class="card-body" style="padding:0">
       <div style="padding:14px 20px;background:#eff6ff;border-bottom:1px solid #bfdbfe;font-size:12.5px;color:#1e40af;line-height:1.8">
-        💡 <b>افزودن ارزیاب جدید</b> باید از پنل Supabase انجام شود
-        (Authentication → Users → Add user). بعد از افزودن، اینجا ظاهر می‌شود و می‌توانید نقشش را تغییر دهید.
+        💡 <b>افزودن کاربر جدید</b> باید از پنل Supabase انجام شود (Authentication → Users → Add user).
+        بعد از افزودن، اینجا ظاهر می‌شود و می‌توانید نقش و واحدش را تعیین کنید.
       </div>
-      <table><thead><tr><th>نام</th><th>نقش</th><th>پرسنل تحت ارزیابی</th><th>عملیات</th></tr></thead><tbody>`;
+      <table><thead><tr><th>نام</th><th>نقش</th><th>واحد</th><th>پرسنل تحت ارزیابی</th><th>عملیات</th></tr></thead><tbody>`;
   profiles.forEach(p => {
     const count = employees.filter(e => e.evaluator_id === p.id).length;
-    const roleBadge = p.role === 'admin' ? '<span class="badge badge-admin">ادمین</span>'
-      : p.role === 'manager' ? '<span class="badge">مدیر</span>' : '<span class="badge">ارزیاب</span>';
+    let roleBadge = '<span class="badge badge-evaluator">ارزیاب</span>';
+    if (p.role === 'admin') roleBadge = '<span class="badge badge-admin">ادمین</span>';
+    else if (p.role === 'senior_manager') roleBadge = '<span class="badge badge-senior">مدیر ارشد</span>';
+    else if (p.role === 'manager') roleBadge = '<span class="badge badge-manager">مدیر ارزیابی</span>';
     html += `<tr>
       <td><b>${escapeHtml(p.full_name||'—')}</b></td>
       <td>${roleBadge}</td>
+      <td>${escapeHtml(p.unit||'—')}</td>
       <td>${count} نفر</td>
       <td class="actions-cell">
-        <button class="icon-btn" onclick="openEditRole('${p.id}')">✏️ تغییر نقش</button>
+        <button class="icon-btn" onclick="openEditUser('${p.id}')">✏️ ویرایش</button>
       </td></tr>`;
   });
   html += `</tbody></table></div></div>`;
   document.getElementById('tabContent').innerHTML = html;
 }
 
-function openEditRole(id){
+function openEditUser(id){
   const p = profiles.find(x => x.id === id);
   if (!p) return;
   const body = `
-    <div class="field"><label>نام</label><input value="${escapeHtml(p.full_name||'')}" id="r_name"></div>
+    <div class="grid2">
+      <div class="field"><label>نام و نام خانوادگی</label><input id="u_name" value="${escapeHtml(p.full_name||'')}"></div>
+      <div class="field"><label>واحد سازمانی</label><input id="u_unit" value="${escapeHtml(p.unit||'')}" placeholder="مثلاً: فناوری اطلاعات"></div>
+    </div>
     <div class="field"><label>نقش</label>
-      <select id="r_role">
-        <option value="evaluator" ${p.role==='evaluator'?'selected':''}>ارزیاب</option>
-        <option value="manager" ${p.role==='manager'?'selected':''}>مدیر</option>
-        <option value="admin" ${p.role==='admin'?'selected':''}>ادمین</option>
+      <select id="u_role">
+        <option value="evaluator" ${p.role==='evaluator'?'selected':''}>ارزیاب (فقط پرسنل خودش)</option>
+        <option value="manager" ${p.role==='manager'?'selected':''}>مدیر ارزیابی (مشاهده همه)</option>
+        <option value="senior_manager" ${p.role==='senior_manager'?'selected':''}>مدیر ارشد (مشاهده همه)</option>
+        <option value="admin" ${p.role==='admin'?'selected':''}>ادمین (دسترسی کامل)</option>
       </select>
+    </div>
+    <div class="hint" style="margin-top:12px">
+      💡 واحد سازمانی برای ارزیاب‌ها الزامی است (در فرم، به‌طور خودکار پر می‌شود).
     </div>`;
   showModal('ویرایش کاربر', body, async () => {
     const data = {
-      full_name: document.getElementById('r_name').value.trim(),
-      role: document.getElementById('r_role').value
+      full_name: document.getElementById('u_name').value.trim(),
+      role: document.getElementById('u_role').value,
+      unit: document.getElementById('u_unit').value.trim()
     };
     const { error } = await sb.from('profiles').update(data).eq('id', id);
     if (error){ alert('خطا: '+error.message); return false; }
@@ -385,6 +409,9 @@ function openEditRole(id){
   });
 }
 
+// ============================================================
+// Stats Tab
+// ============================================================
 function renderStats(){
   const total = employees.filter(e => e.is_active).length;
   const submitted = evaluations.filter(e => e.status === 'submitted').length;
@@ -392,6 +419,7 @@ function renderStats(){
   const none = total - submitted - draft;
   const withScore = evaluations.filter(e => e.status==='submitted' && e.final_score);
   const avg = withScore.length ? (withScore.reduce((a,b)=>a+Number(b.final_score),0)/withScore.length).toFixed(1) : '—';
+
   const html = `<div class="card"><div class="card-head"><h2>📊 آمار کلی</h2></div>
   <div class="card-body">
     <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(180px,1fr));gap:16px">
@@ -400,7 +428,7 @@ function renderStats(){
         <div style="font-size:30px;font-weight:800;color:var(--primary)">${total}</div>
       </div>
       <div style="background:#f8fafc;border:1px solid var(--border);border-radius:10px;padding:20px;text-align:center">
-        <div style="font-size:12.5px;color:var(--muted);font-weight:600">ارزیابی ارسال‌شده</div>
+        <div style="font-size:12.5px;color:var(--muted);font-weight:600">ارسال‌شده</div>
         <div style="font-size:30px;font-weight:800;color:var(--success)">${submitted}</div>
       </div>
       <div style="background:#f8fafc;border:1px solid var(--border);border-radius:10px;padding:20px;text-align:center">
@@ -420,6 +448,9 @@ function renderStats(){
   document.getElementById('tabContent').innerHTML = html;
 }
 
+// ============================================================
+// Modal
+// ============================================================
 function showModal(title, bodyHtml, onSave, wide=false){
   const root = document.getElementById('modalRoot');
   root.innerHTML = `<div class="modal-back" onclick="if(event.target===this) closeModal()">
