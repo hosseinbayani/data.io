@@ -1,0 +1,444 @@
+<!DOCTYPE html>
+<html lang="fa" dir="rtl">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>پنل ادمین — سامانه ارزیابی</title>
+<link href="https://fonts.googleapis.com/css2?family=Vazirmatn:wght@100..900&display=swap" rel="stylesheet">
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<script src="config.js"></script>
+<style>
+  :root{--primary:#1e40af;--primary-light:#3b82f6;--primary-dark:#1e3a8a;--bg:#f1f5f9;--card:#fff;--border:#e2e8f0;--text:#0f172a;--muted:#64748b;--success:#10b981;--danger:#ef4444;--warning:#f59e0b;--radius:12px}
+  *{box-sizing:border-box;margin:0;padding:0}
+  body{font-family:'Vazirmatn',system-ui,sans-serif;background:var(--bg);color:var(--text);line-height:1.7;font-size:14px}
+  .hidden{display:none !important}
+  .login-wrap{min-height:100vh;display:flex;align-items:center;justify-content:center;background:linear-gradient(135deg,#1e3a8a,#3b82f6);padding:20px}
+  .login-card{background:#fff;border-radius:20px;padding:40px 36px;max-width:420px;width:100%;box-shadow:0 20px 60px rgba(0,0,0,.2)}
+  .login-card .logo{font-size:48px;text-align:center;margin-bottom:10px}
+  .login-card h1{text-align:center;font-size:20px;color:var(--primary-dark);margin-bottom:24px}
+  .app-header{background:linear-gradient(135deg,var(--primary-dark),var(--primary));color:#fff;padding:16px 0}
+  .header-inner{max-width:1320px;margin:0 auto;padding:0 24px;display:flex;justify-content:space-between;align-items:center;gap:16px;flex-wrap:wrap}
+  .brand{display:flex;align-items:center;gap:12px}
+  .brand h1{font-size:16px}
+  .content{max-width:1320px;margin:0 auto;padding:24px}
+  .card{background:#fff;border:1px solid var(--border);border-radius:var(--radius);margin-bottom:20px;box-shadow:0 1px 3px rgba(0,0,0,.06);overflow:hidden}
+  .card-head{padding:16px 22px;border-bottom:1px solid var(--border);display:flex;justify-content:space-between;align-items:center;gap:12px;flex-wrap:wrap;background:linear-gradient(180deg,#fafbfc,#fff)}
+  .card-head h2{font-size:15.5px}
+  .card-body{padding:22px}
+  .btn{font-family:inherit;font-size:13.5px;font-weight:600;cursor:pointer;padding:10px 18px;border-radius:10px;border:1px solid transparent;display:inline-flex;align-items:center;gap:8px;text-decoration:none;color:inherit}
+  .btn-primary{background:var(--primary);color:#fff}
+  .btn-primary:hover{background:var(--primary-dark)}
+  .btn-ghost{background:#fff;color:var(--text);border-color:var(--border)}
+  .btn-ghost:hover{background:#f8fafc}
+  .field{margin-bottom:14px}
+  .field label{display:block;font-size:12.5px;font-weight:600;color:var(--muted);margin-bottom:6px}
+  .field input,.field select,.field textarea{width:100%;font-family:inherit;font-size:13.5px;padding:10px 12px;border:1px solid var(--border);border-radius:8px}
+  .field input:focus,.field select:focus,.field textarea:focus{outline:none;border-color:var(--primary-light);box-shadow:0 0 0 3px rgba(59,130,246,.12)}
+  .grid2{display:grid;grid-template-columns:1fr 1fr;gap:16px}
+  .grid3{display:grid;grid-template-columns:1fr 1fr 1fr;gap:16px}
+  table{width:100%;border-collapse:collapse;font-size:13px}
+  th,td{padding:10px 12px;text-align:right;border-bottom:1px solid var(--border)}
+  th{background:#f8fafc;font-size:12px;color:var(--muted);font-weight:700}
+  tr:hover td{background:#f8fafc}
+  .actions-cell{display:flex;gap:6px;justify-content:flex-end}
+  .icon-btn{padding:6px 10px;font-size:12px;border-radius:6px;border:1px solid var(--border);background:#fff;cursor:pointer;font-family:inherit}
+  .icon-btn:hover{background:#f1f5f9}
+  .icon-btn.danger{color:var(--danger);border-color:#fecaca}
+  .icon-btn.danger:hover{background:#fef2f2}
+  .tabs{display:flex;gap:4px;border-bottom:2px solid var(--border);margin-bottom:20px}
+  .tab{padding:10px 20px;cursor:pointer;font-size:13.5px;font-weight:600;color:var(--muted);border-bottom:2px solid transparent;margin-bottom:-2px}
+  .tab.active{color:var(--primary);border-bottom-color:var(--primary)}
+  .toast{position:fixed;bottom:20px;left:50%;transform:translateX(-50%);background:#0f172a;color:#fff;padding:12px 22px;border-radius:30px;font-size:13px;opacity:0;transition:opacity .3s;z-index:999}
+  .toast.show{opacity:1}
+  .toast.error{background:var(--danger)}
+  .toast.success{background:var(--success)}
+  .badge{font-size:11px;font-weight:700;padding:3px 10px;border-radius:20px;background:#f1f5f9;color:var(--muted)}
+  .badge-admin{background:rgba(139,92,246,.15);color:#8b5cf6}
+  .badge-active{background:rgba(16,185,129,.15);color:var(--success)}
+  .hint{background:#eff6ff;border:1px solid #bfdbfe;border-radius:8px;padding:12px 16px;font-size:12.5px;color:#1e40af;line-height:1.85;margin-bottom:16px}
+  .modal-back{position:fixed;inset:0;background:rgba(15,23,42,.6);display:flex;align-items:center;justify-content:center;z-index:200;padding:20px}
+  .modal{background:#fff;border-radius:var(--radius);max-width:600px;width:100%;max-height:90vh;overflow:auto;padding:26px}
+  .modal h3{font-size:16px;margin-bottom:16px}
+  .csv-area{width:100%;min-height:180px;font-family:monospace;font-size:12.5px;padding:12px;border:1px solid var(--border);border-radius:8px;direction:ltr;text-align:left}
+  @media(max-width:640px){.grid2,.grid3{grid-template-columns:1fr}.content{padding:16px}}
+</style>
+</head>
+<body>
+
+<div class="login-wrap hidden" id="loginScreen">
+  <div class="login-card">
+    <div class="logo">⚙️</div>
+    <h1>ورود به پنل ادمین</h1>
+    <div class="field"><label>ایمیل</label><input type="email" id="loginEmail" dir="ltr"></div>
+    <div class="field"><label>رمز عبور</label><input type="password" id="loginPassword" dir="ltr"></div>
+    <button class="btn btn-primary" style="width:100%;justify-content:center" onclick="doLogin()">ورود</button>
+    <div id="loginError" style="color:var(--danger);font-size:13px;margin-top:12px;text-align:center"></div>
+  </div>
+</div>
+
+<div class="hidden" id="appScreen">
+  <header class="app-header">
+    <div class="header-inner">
+      <div class="brand"><div style="font-size:22px">⚙️</div><div><h1>پنل مدیریت سامانه ارزیابی</h1></div></div>
+      <div style="display:flex;gap:8px;flex-wrap:wrap">
+        <a href="index.html" class="btn btn-ghost">🏠 فرم ارزیابی</a>
+        <button class="btn btn-ghost" onclick="logout()">🚪 خروج</button>
+      </div>
+    </div>
+  </header>
+  <main class="content">
+    <div class="tabs">
+      <div class="tab active" data-tab="employees" onclick="switchTab('employees')">👥 پرسنل</div>
+      <div class="tab" data-tab="evaluators" onclick="switchTab('evaluators')">👤 ارزیاب‌ها</div>
+      <div class="tab" data-tab="stats" onclick="switchTab('stats')">📊 آمار</div>
+    </div>
+    <div id="tabContent"></div>
+  </main>
+</div>
+
+<div class="toast" id="toast"></div>
+<div id="modalRoot"></div>
+
+<script>
+const sb = window.supabase.createClient(SUPABASE_URL, SUPABASE_PUBLISHABLE_KEY);
+let currentUser=null, currentProfile=null;
+let employees=[], profiles=[], evaluations=[];
+
+function showToast(msg, type=''){
+  const t = document.getElementById('toast');
+  t.textContent = msg; t.className = 'toast show ' + type;
+  setTimeout(()=> t.className = 'toast', 2500);
+}
+function escapeHtml(s){ return (s||'').replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c])); }
+
+async function doLogin(){
+  const email = document.getElementById('loginEmail').value.trim();
+  const password = document.getElementById('loginPassword').value;
+  document.getElementById('loginError').textContent = '';
+  const { error } = await sb.auth.signInWithPassword({ email, password });
+  if (error){ document.getElementById('loginError').textContent = error.message; return; }
+  initApp();
+}
+async function logout(){ await sb.auth.signOut(); location.reload(); }
+
+async function checkSession(){
+  const { data:{ session } } = await sb.auth.getSession();
+  if (session) initApp();
+  else document.getElementById('loginScreen').classList.remove('hidden');
+}
+
+async function initApp(){
+  const { data:{ user } } = await sb.auth.getUser();
+  if (!user){ document.getElementById('loginScreen').classList.remove('hidden'); return; }
+  currentUser = user;
+  const { data: profile } = await sb.from('profiles').select('*').eq('id', user.id).single();
+  currentProfile = profile;
+  if (!profile || profile.role !== 'admin'){
+    alert('شما دسترسی ادمین ندارید.');
+    await sb.auth.signOut(); location.reload(); return;
+  }
+  document.getElementById('loginScreen').classList.add('hidden');
+  document.getElementById('appScreen').classList.remove('hidden');
+  await loadAll();
+  switchTab('employees');
+}
+
+async function loadAll(){
+  const [e, p, ev] = await Promise.all([
+    sb.from('employees').select('*').order('full_name'),
+    sb.from('profiles').select('*').order('full_name'),
+    sb.from('evaluations').select('id, employee_id, evaluator_id, status, final_score')
+  ]);
+  employees = e.data || [];
+  profiles = p.data || [];
+  evaluations = ev.data || [];
+}
+
+function switchTab(t){
+  document.querySelectorAll('.tab').forEach(el => el.classList.toggle('active', el.dataset.tab === t));
+  if (t === 'employees') renderEmployees();
+  if (t === 'evaluators') renderEvaluators();
+  if (t === 'stats') renderStats();
+}
+
+function renderEmployees(){
+  let html = `<div class="card">
+    <div class="card-head"><h2>👥 مدیریت پرسنل</h2>
+      <div style="display:flex;gap:8px;flex-wrap:wrap">
+        <button class="btn btn-ghost" onclick="openBulkUpload()">📋 افزودن گروهی (CSV)</button>
+        <button class="btn btn-primary" onclick="openAddEmployee()">➕ افزودن پرسنل</button>
+      </div>
+    </div>
+    <div class="card-body" style="padding:0">`;
+  if (!employees.length){
+    html += `<div style="padding:40px;text-align:center;color:var(--muted)">هنوز پرسنلی ثبت نشده. با دکمه بالا اضافه کنید.</div>`;
+  } else {
+    html += `<table><thead><tr>
+      <th>نام</th><th>کد پرسنلی</th><th>سمت</th><th>سطح</th><th>واحد</th><th>دسته</th><th>ارزیاب</th><th>وضعیت</th><th></th>
+    </tr></thead><tbody>`;
+    employees.forEach(e => {
+      const ev = evaluations.find(x => x.employee_id === e.id);
+      const evName = profiles.find(p => p.id === e.evaluator_id)?.full_name || '—';
+      const catLabel = e.category === 'technical' ? 'فنی' : 'ستادی';
+      const statusBadge = !ev ? '<span class="badge">شروع نشده</span>'
+        : ev.status === 'submitted' ? '<span class="badge badge-active">ارسال‌شده</span>'
+        : '<span class="badge" style="background:rgba(245,158,11,.15);color:#f59e0b">پیش‌نویس</span>';
+      html += `<tr>
+        <td><b>${escapeHtml(e.full_name)}</b></td>
+        <td>${escapeHtml(e.personnel_code||'—')}</td>
+        <td>${escapeHtml(e.position||'—')}</td>
+        <td>${escapeHtml(e.job_level||'—')}</td>
+        <td>${escapeHtml(e.unit||'—')}</td>
+        <td>${catLabel}</td>
+        <td>${escapeHtml(evName)}</td>
+        <td>${statusBadge}</td>
+        <td class="actions-cell">
+          <button class="icon-btn" onclick="openEditEmployee('${e.id}')">✏️</button>
+          <button class="icon-btn danger" onclick="deleteEmployee('${e.id}')">🗑</button>
+        </td></tr>`;
+    });
+    html += `</tbody></table>`;
+  }
+  html += `</div></div>`;
+  document.getElementById('tabContent').innerHTML = html;
+}
+
+function employeeForm(e = {}){
+  const evalOptions = profiles.map(p => `<option value="${p.id}" ${e.evaluator_id===p.id?'selected':''}>${escapeHtml(p.full_name||'')} ${p.role==='admin'?'(ادمین)':''}</option>`).join('');
+  return `
+    <div class="grid2">
+      <div class="field"><label>نام و نام خانوادگی *</label><input id="f_full_name" value="${escapeHtml(e.full_name||'')}"></div>
+      <div class="field"><label>کد پرسنلی</label><input id="f_personnel_code" value="${escapeHtml(e.personnel_code||'')}"></div>
+    </div>
+    <div class="grid2">
+      <div class="field"><label>سمت / عنوان شغلی</label><input id="f_position" value="${escapeHtml(e.position||'')}"></div>
+      <div class="field"><label>واحد / بخش</label><input id="f_unit" value="${escapeHtml(e.unit||'')}"></div>
+    </div>
+    <div class="grid3">
+      <div class="field"><label>سطح شغلی</label>
+        <select id="f_job_level">
+          <option value="">—</option>
+          ${['جونیور','میانی','سنیور','لید / سرتیم'].map(l => `<option value="${l}" ${e.job_level===l?'selected':''}>${l}</option>`).join('')}
+        </select>
+      </div>
+      <div class="field"><label>دسته شغلی *</label>
+        <select id="f_category">
+          <option value="technical" ${e.category==='technical'?'selected':''}>فنی</option>
+          <option value="staff" ${e.category==='staff'?'selected':''}>ستادی</option>
+        </select>
+      </div>
+      <div class="field"><label>ارزیاب مسئول *</label>
+        <select id="f_evaluator_id"><option value="">—</option>${evalOptions}</select>
+      </div>
+    </div>
+    <div class="field"><label>وضعیت</label>
+      <select id="f_is_active">
+        <option value="true" ${e.is_active!==false?'selected':''}>فعال</option>
+        <option value="false" ${e.is_active===false?'selected':''}>غیرفعال</option>
+      </select>
+    </div>`;
+}
+
+function openAddEmployee(){
+  showModal('افزودن پرسنل جدید', employeeForm(), async () => {
+    const data = {
+      full_name: document.getElementById('f_full_name').value.trim(),
+      personnel_code: document.getElementById('f_personnel_code').value.trim(),
+      position: document.getElementById('f_position').value.trim(),
+      unit: document.getElementById('f_unit').value.trim(),
+      job_level: document.getElementById('f_job_level').value,
+      category: document.getElementById('f_category').value,
+      evaluator_id: document.getElementById('f_evaluator_id').value || null,
+      is_active: document.getElementById('f_is_active').value === 'true'
+    };
+    if (!data.full_name){ alert('نام الزامیست'); return false; }
+    if (!data.evaluator_id){ alert('انتخاب ارزیاب الزامیست'); return false; }
+    const { error } = await sb.from('employees').insert(data);
+    if (error){ alert('خطا: '+error.message); return false; }
+    showToast('پرسنل اضافه شد','success');
+    await loadAll(); renderEmployees();
+    return true;
+  });
+}
+
+function openEditEmployee(id){
+  const e = employees.find(x => x.id === id);
+  if (!e) return;
+  showModal('ویرایش پرسنل', employeeForm(e), async () => {
+    const data = {
+      full_name: document.getElementById('f_full_name').value.trim(),
+      personnel_code: document.getElementById('f_personnel_code').value.trim(),
+      position: document.getElementById('f_position').value.trim(),
+      unit: document.getElementById('f_unit').value.trim(),
+      job_level: document.getElementById('f_job_level').value,
+      category: document.getElementById('f_category').value,
+      evaluator_id: document.getElementById('f_evaluator_id').value || null,
+      is_active: document.getElementById('f_is_active').value === 'true'
+    };
+    const { error } = await sb.from('employees').update(data).eq('id', id);
+    if (error){ alert('خطا: '+error.message); return false; }
+    showToast('ویرایش شد','success');
+    await loadAll(); renderEmployees();
+    return true;
+  });
+}
+
+async function deleteEmployee(id){
+  if (!confirm('آیا مطمئنید؟ این پرسنل حذف می‌شود.')) return;
+  const { error } = await sb.from('employees').delete().eq('id', id);
+  if (error){ showToast('خطا: '+error.message,'error'); return; }
+  showToast('حذف شد','success');
+  await loadAll(); renderEmployees();
+}
+
+function openBulkUpload(){
+  const body = `
+    <div class="hint">
+      <b>راهنما:</b> هر خط یک پرسنل. مقادیر را با کاما جدا کنید. ترتیب ستون‌ها:<br>
+      <code style="direction:ltr;display:inline-block;background:#fff;padding:4px 8px;border-radius:4px;margin:6px 0">نام, کد پرسنلی, سمت, سطح, واحد, دسته (technical/staff), نام ارزیاب</code><br>
+      سطر اول (هدر) اختیاری است. نام ارزیاب باید دقیقاً با یکی از ارزیاب‌های موجود مطابقت داشته باشد.
+    </div>
+    <textarea class="csv-area" id="csvInput" placeholder="علی رضایی,1001,مهندس نرم‌افزار,میانی,فناوری اطلاعات,technical,مدیر تست
+مریم احمدی,1002,کارشناس اداری,جونیور,منابع انسانی,staff,مدیر تست"></textarea>`;
+  showModal('افزودن گروهی پرسنل', body, async () => {
+    const raw = document.getElementById('csvInput').value.trim();
+    if (!raw){ alert('محتوایی وارد نشده'); return false; }
+    const lines = raw.split('\n').map(l => l.trim()).filter(l => l);
+    const rows = lines.map(l => l.split(',').map(c => c.trim()));
+    const first = rows[0];
+    const hasHeader = first[5] && !['technical','staff'].includes(first[5].toLowerCase());
+    const dataRows = hasHeader ? rows.slice(1) : rows;
+    const nameMap = {};
+    profiles.forEach(p => { nameMap[(p.full_name||'').trim()] = p.id; });
+    const inserts = [], errors = [];
+    dataRows.forEach((r, i) => {
+      if (r.length < 7){ errors.push(`سطر ${i+1}: ستون‌های ناقص`); return; }
+      const [name, code, pos, level, unit, cat, evalName] = r;
+      const evaluatorId = nameMap[evalName];
+      if (!name){ errors.push(`سطر ${i+1}: نام خالی`); return; }
+      if (!['technical','staff'].includes(cat)){ errors.push(`سطر ${i+1}: دسته نامعتبر "${cat}"`); return; }
+      if (!evaluatorId){ errors.push(`سطر ${i+1}: ارزیاب "${evalName}" پیدا نشد`); return; }
+      inserts.push({ full_name:name, personnel_code:code, position:pos, job_level:level, unit, category:cat, evaluator_id:evaluatorId, is_active:true });
+    });
+    if (errors.length){
+      alert('خطاها:\n' + errors.slice(0,10).join('\n') + (errors.length>10?`\n... و ${errors.length-10} خطای دیگر`:''));
+      return false;
+    }
+    if (!inserts.length){ alert('رکورد معتبری یافت نشد'); return false; }
+    const { error } = await sb.from('employees').insert(inserts);
+    if (error){ alert('خطا در درج: '+error.message); return false; }
+    showToast(`${inserts.length} پرسنل اضافه شد`, 'success');
+    await loadAll(); renderEmployees();
+    return true;
+  }, true);
+}
+
+function renderEvaluators(){
+  let html = `<div class="card">
+    <div class="card-head"><h2>👤 لیست ارزیاب‌ها</h2>
+      <span class="badge">${profiles.length} نفر</span>
+    </div>
+    <div class="card-body" style="padding:0">
+      <div style="padding:14px 20px;background:#eff6ff;border-bottom:1px solid #bfdbfe;font-size:12.5px;color:#1e40af;line-height:1.8">
+        💡 <b>افزودن ارزیاب جدید</b> باید از پنل Supabase انجام شود
+        (Authentication → Users → Add user). بعد از افزودن، اینجا ظاهر می‌شود و می‌توانید نقشش را تغییر دهید.
+      </div>
+      <table><thead><tr><th>نام</th><th>نقش</th><th>پرسنل تحت ارزیابی</th><th>عملیات</th></tr></thead><tbody>`;
+  profiles.forEach(p => {
+    const count = employees.filter(e => e.evaluator_id === p.id).length;
+    const roleBadge = p.role === 'admin' ? '<span class="badge badge-admin">ادمین</span>'
+      : p.role === 'manager' ? '<span class="badge">مدیر</span>' : '<span class="badge">ارزیاب</span>';
+    html += `<tr>
+      <td><b>${escapeHtml(p.full_name||'—')}</b></td>
+      <td>${roleBadge}</td>
+      <td>${count} نفر</td>
+      <td class="actions-cell">
+        <button class="icon-btn" onclick="openEditRole('${p.id}')">✏️ تغییر نقش</button>
+      </td></tr>`;
+  });
+  html += `</tbody></table></div></div>`;
+  document.getElementById('tabContent').innerHTML = html;
+}
+
+function openEditRole(id){
+  const p = profiles.find(x => x.id === id);
+  if (!p) return;
+  const body = `
+    <div class="field"><label>نام</label><input value="${escapeHtml(p.full_name||'')}" id="r_name"></div>
+    <div class="field"><label>نقش</label>
+      <select id="r_role">
+        <option value="evaluator" ${p.role==='evaluator'?'selected':''}>ارزیاب</option>
+        <option value="manager" ${p.role==='manager'?'selected':''}>مدیر</option>
+        <option value="admin" ${p.role==='admin'?'selected':''}>ادمین</option>
+      </select>
+    </div>`;
+  showModal('ویرایش کاربر', body, async () => {
+    const data = {
+      full_name: document.getElementById('r_name').value.trim(),
+      role: document.getElementById('r_role').value
+    };
+    const { error } = await sb.from('profiles').update(data).eq('id', id);
+    if (error){ alert('خطا: '+error.message); return false; }
+    showToast('ذخیره شد','success');
+    await loadAll(); renderEvaluators();
+    return true;
+  });
+}
+
+function renderStats(){
+  const total = employees.filter(e => e.is_active).length;
+  const submitted = evaluations.filter(e => e.status === 'submitted').length;
+  const draft = evaluations.filter(e => e.status === 'draft').length;
+  const none = total - submitted - draft;
+  const withScore = evaluations.filter(e => e.status==='submitted' && e.final_score);
+  const avg = withScore.length ? (withScore.reduce((a,b)=>a+Number(b.final_score),0)/withScore.length).toFixed(1) : '—';
+  const html = `<div class="card"><div class="card-head"><h2>📊 آمار کلی</h2></div>
+  <div class="card-body">
+    <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(180px,1fr));gap:16px">
+      <div style="background:#f8fafc;border:1px solid var(--border);border-radius:10px;padding:20px;text-align:center">
+        <div style="font-size:12.5px;color:var(--muted);font-weight:600">کل پرسنل فعال</div>
+        <div style="font-size:30px;font-weight:800;color:var(--primary)">${total}</div>
+      </div>
+      <div style="background:#f8fafc;border:1px solid var(--border);border-radius:10px;padding:20px;text-align:center">
+        <div style="font-size:12.5px;color:var(--muted);font-weight:600">ارزیابی ارسال‌شده</div>
+        <div style="font-size:30px;font-weight:800;color:var(--success)">${submitted}</div>
+      </div>
+      <div style="background:#f8fafc;border:1px solid var(--border);border-radius:10px;padding:20px;text-align:center">
+        <div style="font-size:12.5px;color:var(--muted);font-weight:600">پیش‌نویس</div>
+        <div style="font-size:30px;font-weight:800;color:var(--warning)">${draft}</div>
+      </div>
+      <div style="background:#f8fafc;border:1px solid var(--border);border-radius:10px;padding:20px;text-align:center">
+        <div style="font-size:12.5px;color:var(--muted);font-weight:600">شروع نشده</div>
+        <div style="font-size:30px;font-weight:800;color:var(--muted)">${none}</div>
+      </div>
+      <div style="background:#f8fafc;border:1px solid var(--border);border-radius:10px;padding:20px;text-align:center">
+        <div style="font-size:12.5px;color:var(--muted);font-weight:600">میانگین امتیاز</div>
+        <div style="font-size:30px;font-weight:800;color:var(--primary)">${avg}</div>
+      </div>
+    </div>
+  </div></div>`;
+  document.getElementById('tabContent').innerHTML = html;
+}
+
+function showModal(title, bodyHtml, onSave, wide=false){
+  const root = document.getElementById('modalRoot');
+  root.innerHTML = `<div class="modal-back" onclick="if(event.target===this) closeModal()">
+    <div class="modal" style="${wide?'max-width:800px':''}">
+      <h3>${title}</h3>
+      <div style="margin-bottom:18px">${bodyHtml}</div>
+      <div style="display:flex;gap:10px;justify-content:flex-end">
+        <button class="btn btn-ghost" onclick="closeModal()">لغو</button>
+        <button class="btn btn-primary" id="modalSaveBtn">ذخیره</button>
+      </div>
+    </div></div>`;
+  document.getElementById('modalSaveBtn').onclick = async () => {
+    const ok = await onSave();
+    if (ok) closeModal();
+  };
+}
+function closeModal(){ document.getElementById('modalRoot').innerHTML = ''; }
+
+checkSession();
+</script>
+</body>
+</html>
