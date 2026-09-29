@@ -133,6 +133,15 @@
   .toast.show{opacity:1}
   .toast.error{background:var(--danger)}
   .toast.success{background:var(--success)}
+
+  /* Full-screen loading overlay for print all */
+  .loading-overlay{position:fixed;inset:0;background:rgba(15,23,42,.75);display:none;align-items:center;justify-content:center;z-index:500;color:#fff}
+  .loading-overlay.show{display:flex}
+  .loading-box{background:#fff;color:var(--text);padding:30px 40px;border-radius:16px;text-align:center;box-shadow:0 20px 60px rgba(0,0,0,.3)}
+  .loading-box .spin{width:40px;height:40px;border:4px solid #e2e8f0;border-top-color:var(--primary);border-radius:50%;animation:spin .8s linear infinite;margin:0 auto 14px}
+  @keyframes spin{to{transform:rotate(360deg)}}
+  .loading-box p{font-size:14px;color:var(--muted)}
+
   @media(max-width:640px){
     .header-inner{padding:0 16px}
     .content{padding:16px}
@@ -146,7 +155,6 @@
 </head>
 <body>
 
-<!-- Login -->
 <div class="login-wrap hidden" id="loginScreen">
   <div class="login-card">
     <div class="logo">👔</div>
@@ -159,7 +167,6 @@
   </div>
 </div>
 
-<!-- App -->
 <div id="appScreen" class="hidden">
   <header class="app-header">
     <div class="header-inner">
@@ -181,7 +188,6 @@
   </header>
 
   <main class="content">
-    <!-- Tabs (قابل توسعه در آینده) -->
     <div class="tabs">
       <div class="tab active" data-tab="list" onclick="switchTab('list')">
         📋 لیست ارزیابی‌ها <span class="badge-count" id="tabCount">0</span>
@@ -191,9 +197,7 @@
       </div>
     </div>
 
-    <!-- Tab: List -->
     <div id="tab-list">
-      <!-- KPI -->
       <div class="kpi-grid">
         <div class="kpi">
           <div class="kpi-lbl">کل پرسنل</div>
@@ -222,7 +226,6 @@
         </div>
       </div>
 
-      <!-- Filters -->
       <div class="card">
         <div class="card-head"><h2>🔎 فیلترها</h2></div>
         <div class="card-body">
@@ -256,11 +259,15 @@
         </div>
       </div>
 
-      <!-- Table -->
       <div class="card">
         <div class="card-head">
           <h2>📋 لیست ارزیابی‌ها</h2>
-          <span style="font-size:12.5px;color:var(--muted)">روی هر ردیف کلیک کنید تا جزئیات را ببینید</span>
+          <div style="display:flex;gap:10px;flex-wrap:wrap;align-items:center">
+            <span style="font-size:12.5px;color:var(--muted)">روی هر ردیف کلیک کنید تا جزئیات را ببینید</span>
+            <button class="btn btn-solid" id="printAllBtn" onclick="printAllReports()" style="font-size:13px;padding:8px 14px">
+              🖨 چاپ همه کارنامه‌ها
+            </button>
+          </div>
         </div>
         <div class="card-body" style="padding:0">
           <div style="overflow-x:auto">
@@ -286,7 +293,6 @@
       </div>
     </div>
 
-    <!-- Tab: Dashboard (placeholder) -->
     <div id="tab-dashboard" class="hidden">
       <div class="card">
         <div class="card-body">
@@ -304,8 +310,14 @@
   </main>
 </div>
 
-<!-- Viewer modal container -->
 <div id="viewerRoot"></div>
+
+<div class="loading-overlay" id="loadingOverlay">
+  <div class="loading-box">
+    <div class="spin"></div>
+    <p id="loadingText">در حال آماده‌سازی کارنامه‌ها...</p>
+  </div>
+</div>
 
 <div class="toast" id="toast"></div>
 
@@ -321,9 +333,6 @@ let allEvaluations = [];
 let evaluationsMap = {};
 let filteredRows = [];
 
-// ============================================================
-// Utilities
-// ============================================================
 function showToast(msg, type=''){
   const t = document.getElementById('toast');
   t.textContent = msg; t.className = 'toast show ' + type;
@@ -427,13 +436,11 @@ async function loadAll(){
 // Filters
 // ============================================================
 function buildFilters(){
-  // Units
   const units = [...new Set(allEmployees.map(e => e.unit).filter(Boolean))].sort();
   document.getElementById('filterUnit').innerHTML =
     '<option value="">همه واحدها</option>' +
     units.map(u => `<option value="${escapeHtml(u)}">${escapeHtml(u)}</option>`).join('');
 
-  // Evaluators (کسانی که پرسنل دارند)
   const evIds = [...new Set(allEmployees.map(e => e.evaluator_id).filter(Boolean))];
   const evNames = evIds.map(id => {
     const p = allProfiles.find(x => x.id === id);
@@ -530,7 +537,6 @@ async function openViewer(employeeId){
 
   const root = document.getElementById('viewerRoot');
 
-  // حالت: بدون ارزیابی
   if (!ev){
     root.innerHTML = `
       <div class="modal-back" onclick="if(event.target===this) closeViewer()">
@@ -552,7 +558,6 @@ async function openViewer(employeeId){
     return;
   }
 
-  // حالت: نمایش ارزیابی
   root.innerHTML = `
     <div class="modal-back" onclick="if(event.target===this) closeViewer()">
       <div class="modal">
@@ -576,7 +581,6 @@ async function openViewer(employeeId){
       </div>
     </div>`;
 
-  // Load items
   const { data: items } = await sb.from('evaluation_items').select('*').eq('evaluation_id', ev.id);
   renderViewerContent(emp, evaluatorProf, ev, items || []);
 }
@@ -680,7 +684,7 @@ function renderViewerContent(emp, evaluatorProf, ev, items){
 function closeViewer(){ document.getElementById('viewerRoot').innerHTML = ''; }
 
 // ============================================================
-// Print Report
+// Print - Single
 // ============================================================
 async function printFor(employeeId){
   const emp = allEmployees.find(e => e.id === employeeId);
@@ -689,59 +693,116 @@ async function printFor(employeeId){
   if (!ev){ alert('ارزیابی‌ای ثبت نشده است.'); return; }
   const evaluatorProf = allProfiles.find(p => p.id === emp.evaluator_id);
   const { data: items } = await sb.from('evaluation_items').select('*').eq('evaluation_id', ev.id);
-  buildAndPrint(emp, evaluatorProf, ev, items || []);
+  printPages([{ emp, evaluatorProf, ev, items: items || [] }]);
 }
 
-function buildAndPrint(emp, evaluatorProf, ev, items){
-  const category = emp.category;
-  const form = FORMS[category];
-  const w = CATEGORY_WEIGHTS[category];
-  const itemMap = {};
-  items.forEach(it => itemMap[it.competency_key] = it);
+// ============================================================
+// Print - All (with current filters)
+// ============================================================
+async function printAllReports(){
+  const printBtn = document.getElementById('printAllBtn');
 
-  const behAvg = ev.beh_avg != null ? Number(ev.beh_avg).toFixed(1) : '—';
-  const funcAvg = ev.func_avg != null ? Number(ev.func_avg).toFixed(1) : '—';
-  const finalScore = ev.final_score != null ? Number(ev.final_score).toFixed(1) : '—';
+  // فقط ارزیابی‌های ثبت‌نهایی‌شده از میان فیلترهای فعلی
+  const candidates = filteredRows.filter(e => {
+    const ev = evaluationsMap[e.id];
+    return ev && ev.status === 'submitted';
+  });
 
-  function buildCompactRows(cat){
-    return form[cat].map((item, i) => {
-      const ck = `${category}_${cat}_${i}`;
-      const dbItem = itemMap[ck];
-      let scoreDisplay = '—', isNA = false;
-      if (dbItem){
-        if (dbItem.is_na){ scoreDisplay = 'N/A'; isNA = true; }
-        else if (dbItem.score){ scoreDisplay = `${dbItem.score}/5`; }
-      }
-      return `<li>
-        <span class="cn">${escapeHtml(item.name)}</span>
-        <span class="cw">${item.weight}٪</span>
-        <span class="cs${isNA ? ' na' : ''}">${scoreDisplay}</span>
-      </li>`;
-    }).join('');
+  if (!candidates.length){
+    alert('هیچ ارزیابی ثبت‌نهایی‌شده‌ای در فیلترهای فعلی وجود ندارد.\n\nنکته: فقط ارزیابی‌هایی که «ارسال نهایی» شده‌اند قابل چاپ هستند.');
+    return;
   }
 
-  const info = {
-    unit: emp.unit || '—',
-    evaluator: evaluatorProf ? (evaluatorProf.full_name || '—') : '—',
-    evaluatee: emp.full_name,
-    position: emp.position || '—',
-    level: emp.job_level || '—',
-    period: ev.period || '—',
-    date: formatDateFa(ev.submitted_at) || getTodayShamsi(),
-    strengths: ev.strengths || '—',
-    improvements: ev.improvements || '—'
-  };
+  // تشخیص متن خلاصه فیلترها
+  const filterSummary = [];
+  const unitFilter = document.getElementById('filterUnit').value;
+  const evFilter = document.getElementById('filterEvaluator').value;
+  if (unitFilter) filterSummary.push(`واحد: ${unitFilter}`);
+  if (evFilter){
+    const p = allProfiles.find(x => x.id === evFilter);
+    if (p) filterSummary.push(`ارزیاب: ${p.full_name}`);
+  }
+  const summaryText = filterSummary.length ? `\n(${filterSummary.join(' | ')})` : '';
+
+  if (!confirm(`آیا از چاپ ${candidates.length} کارنامه مطمئن هستید؟${summaryText}\n\nنکته: ممکن است چند ثانیه طول بکشد.`)) return;
+
+  // نمایش loading
+  printBtn.disabled = true;
+  showLoading('در حال بارگذاری کارنامه‌ها...');
+
+  try {
+    // دریافت همه items در یک کوئری
+    const evalIds = candidates.map(e => evaluationsMap[e.id].id);
+    const { data: allItems, error } = await sb.from('evaluation_items')
+      .select('*')
+      .in('evaluation_id', evalIds);
+
+    if (error) throw error;
+
+    const itemsByEval = {};
+    (allItems || []).forEach(it => {
+      if (!itemsByEval[it.evaluation_id]) itemsByEval[it.evaluation_id] = [];
+      itemsByEval[it.evaluation_id].push(it);
+    });
+
+    showLoading('در حال آماده‌سازی صفحه چاپ...');
+
+    // ساخت آرایه صفحات
+    const pages = candidates.map(emp => {
+      const ev = evaluationsMap[emp.id];
+      const evaluatorProf = allProfiles.find(p => p.id === emp.evaluator_id);
+      const items = itemsByEval[ev.id] || [];
+      return { emp, evaluatorProf, ev, items };
+    });
+
+    // چاپ
+    printPages(pages);
+
+  } catch (err){
+    console.error(err);
+    alert('خطا در آماده‌سازی کارنامه‌ها: ' + err.message);
+  } finally {
+    hideLoading();
+    printBtn.disabled = false;
+  }
+}
+
+function showLoading(text){
+  document.getElementById('loadingText').textContent = text;
+  document.getElementById('loadingOverlay').classList.add('show');
+}
+function hideLoading(){
+  document.getElementById('loadingOverlay').classList.remove('show');
+}
+
+// ============================================================
+// Core: Build & Print pages
+// ============================================================
+function printPages(pages){
+  const total = pages.length;
+  let pagesHtml = '';
+
+  pages.forEach((p, idx) => {
+    const isLast = (idx === total - 1);
+    pagesHtml += buildReportPageHtml(p.emp, p.evaluatorProf, p.ev, p.items, {
+      pageNum: idx + 1,
+      totalPages: total,
+      addPageBreak: !isLast
+    });
+  });
 
   const html = `<!DOCTYPE html>
 <html lang="fa" dir="rtl">
 <head>
 <meta charset="UTF-8">
-<title>کارنامه عملکرد — ${escapeHtml(emp.full_name)}</title>
+<title>کارنامه‌های ارزیابی (${total} کارنامه)</title>
 <link href="https://fonts.googleapis.com/css2?family=Vazirmatn:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
 <style>
   *{box-sizing:border-box;margin:0;padding:0}
   body{font-family:'Vazirmatn',system-ui,sans-serif;direction:rtl;color:#0f172a;font-size:9.5pt;line-height:1.55;background:#fff;padding:8mm}
-  .card-wrap{border:1.5px solid #1e40af;border-radius:10px;overflow:hidden}
+  .card-wrap{border:1.5px solid #1e40af;border-radius:10px;overflow:hidden;margin-bottom:8mm;page-break-inside:avoid}
+  .card-wrap:last-child{margin-bottom:0}
+  .card-wrap.page-break{page-break-after:always}
   .header{background:linear-gradient(135deg,#1e3a8a,#1e40af,#3b82f6);color:#fff;padding:10px 18px;display:flex;justify-content:space-between;align-items:center;-webkit-print-color-adjust:exact;print-color-adjust:exact}
   .header h1{font-size:13.5pt;font-weight:800}
   .header .sub{font-size:8.5pt;opacity:.92;margin-top:2px}
@@ -789,76 +850,141 @@ function buildAndPrint(emp, evaluatorProf, ev, items){
   .footer{padding:7px 18px;background:#eff6ff;border-top:1px solid #dbeafe;text-align:center;font-size:7.5pt;color:#1e40af;line-height:1.7;-webkit-print-color-adjust:exact;print-color-adjust:exact}
   .footer .line1{margin-bottom:2px}
   .footer .line2{font-weight:700}
-  @media print{@page{size:A4;margin:8mm}body{padding:0}.card-wrap{page-break-inside:avoid}}
+  @media print{
+    @page{size:A4;margin:8mm}
+    body{padding:0}
+    .card-wrap{page-break-inside:avoid}
+    .card-wrap.page-break{page-break-after:always}
+  }
 </style>
 </head>
 <body>
-  <div class="card-wrap">
-    <div class="header">
-      <div>
-        <h1>کارنامه عملکرد همکار (در سطح فردی)</h1>
-        <div class="sub">${form.title} — ارزیابی مبتنی بر انکورهای رفتاری (BARS)</div>
-      </div>
-      <div class="right">تاریخ چاپ: <b>${getTodayShamsi()}</b><br>دوره ارزیابی: <b>${escapeHtml(info.period)}</b></div>
-    </div>
-    <div class="info-strip">
-      <div class="info-item"><span class="lbl">واحد سازمانی:</span><span class="val">${escapeHtml(info.unit)}</span></div>
-      <div class="info-item"><span class="lbl">ارزیاب:</span><span class="val">${escapeHtml(info.evaluator)}</span></div>
-      <div class="info-item"><span class="lbl">ارزیابی‌شونده:</span><span class="val">${escapeHtml(info.evaluatee)}</span></div>
-      <div class="info-item"><span class="lbl">عنوان شغلی:</span><span class="val">${escapeHtml(info.position)}</span></div>
-      <div class="info-item"><span class="lbl">سطح سازمانی:</span><span class="val">${escapeHtml(info.level)}</span></div>
-      <div class="info-item"><span class="lbl">تاریخ ارزیابی:</span><span class="val">${escapeHtml(info.date)}</span></div>
-    </div>
-    <div class="score-section">
-      <div class="score-cell func">
-        <div class="lbl">میانگین وزنی عملکردی</div>
-        <div class="num">${funcAvg}</div>
-        <div class="sub">از ۱۰۰ — وزن ${w.functional}٪</div>
-      </div>
-      <div class="score-cell beh">
-        <div class="lbl">میانگین وزنی رفتاری</div>
-        <div class="num">${behAvg}</div>
-        <div class="sub">از ۱۰۰ — وزن ${w.behavioral}٪</div>
-      </div>
-      <div class="score-cell final">
-        <div class="lbl">امتیاز نهایی</div>
-        <div class="num">${finalScore}</div>
-        <div class="sub">از ۱۰۰</div>
-      </div>
-    </div>
-    <div class="comp-section">
-      <div class="comp-section-title func"><span class="dot"></span>شایستگی‌های عملکردی <span class="w-badge">وزن ${w.functional}٪</span></div>
-      <ul class="comp-grid">${buildCompactRows('functional')}</ul>
-    </div>
-    <div class="comp-section">
-      <div class="comp-section-title beh"><span class="dot"></span>شایستگی‌های رفتاری <span class="w-badge">وزن ${w.behavioral}٪</span></div>
-      <ul class="comp-grid">${buildCompactRows('behavioral')}</ul>
-    </div>
-    <div class="fb-section">
-      <div class="fb-cell"><div class="fb-lbl good">✅ نقاط قوت همکار</div><div class="fb-content">${escapeHtml(info.strengths)}</div></div>
-      <div class="fb-cell"><div class="fb-lbl warn">📈 حوزه‌های نیازمند بهبود</div><div class="fb-content">${escapeHtml(info.improvements)}</div></div>
-    </div>
-    <div class="sign-section">
-      <div class="sign-box"><div class="sign-line"></div><div class="sign-lbl">امضای ارزیاب (مدیر مستقیم)</div><div class="sign-name">${escapeHtml(info.evaluator)}</div></div>
-      <div class="sign-box"><div class="sign-line"></div><div class="sign-lbl">اطلاع و تأیید ارزیابی‌شونده</div><div class="sign-name">${escapeHtml(info.evaluatee)}</div></div>
-    </div>
-    <div class="footer">
-      <div class="line1">این کارنامه بر اساس مقیاس BARS (مقیاس درجه‌بندی مبتنی بر انکورهای رفتاری) تنظیم شده است.</div>
-      <div class="line2">مدیریت منابع انسانی</div>
-    </div>
-  </div>
+${pagesHtml}
 </body>
 </html>`;
 
   const iframe = document.createElement('iframe');
   iframe.style.cssText = 'position:fixed;width:0;height:0;border:0;';
   document.body.appendChild(iframe);
+
   const doc = iframe.contentWindow.document;
   doc.open(); doc.write(html); doc.close();
+
   setTimeout(() => {
-    try { iframe.contentWindow.focus(); iframe.contentWindow.print(); } catch(e){}
+    try {
+      iframe.contentWindow.focus();
+      iframe.contentWindow.print();
+    } catch(e){ console.error(e); }
     setTimeout(() => iframe.remove(), 2000);
-  }, 600);
+  }, 700);
+}
+
+// ============================================================
+// Build single report page HTML
+// ============================================================
+function buildReportPageHtml(emp, evaluatorProf, ev, items, opts){
+  const category = emp.category;
+  const form = FORMS[category];
+  const w = CATEGORY_WEIGHTS[category];
+  const itemMap = {};
+  items.forEach(it => itemMap[it.competency_key] = it);
+
+  const behAvg = ev.beh_avg != null ? Number(ev.beh_avg).toFixed(1) : '—';
+  const funcAvg = ev.func_avg != null ? Number(ev.func_avg).toFixed(1) : '—';
+  const finalScore = ev.final_score != null ? Number(ev.final_score).toFixed(1) : '—';
+
+  function buildCompactRows(cat){
+    return form[cat].map((item, i) => {
+      const ck = `${category}_${cat}_${i}`;
+      const dbItem = itemMap[ck];
+      let scoreDisplay = '—', isNA = false;
+      if (dbItem){
+        if (dbItem.is_na){ scoreDisplay = 'N/A'; isNA = true; }
+        else if (dbItem.score){ scoreDisplay = `${dbItem.score}/5`; }
+      }
+      return `<li>
+        <span class="cn">${escapeHtml(item.name)}</span>
+        <span class="cw">${item.weight}٪</span>
+        <span class="cs${isNA ? ' na' : ''}">${scoreDisplay}</span>
+      </li>`;
+    }).join('');
+  }
+
+  const info = {
+    unit: emp.unit || '—',
+    evaluator: evaluatorProf ? (evaluatorProf.full_name || '—') : '—',
+    evaluatee: emp.full_name,
+    position: emp.position || '—',
+    level: emp.job_level || '—',
+    period: ev.period || '—',
+    date: formatDateFa(ev.submitted_at) || getTodayShamsi(),
+    strengths: ev.strengths || '—',
+    improvements: ev.improvements || '—'
+  };
+
+  const pageBreakClass = opts && opts.addPageBreak ? ' page-break' : '';
+  const pageInfoHtml = (opts && opts.totalPages > 1)
+    ? `صفحه ${opts.pageNum} از ${opts.totalPages}`
+    : `تاریخ چاپ: ${getTodayShamsi()}`;
+
+  return `
+<div class="card-wrap${pageBreakClass}">
+  <div class="header">
+    <div>
+      <h1>کارنامه عملکرد همکار (در سطح فردی)</h1>
+      <div class="sub">${form.title} — ارزیابی مبتنی بر انکورهای رفتاری (BARS)</div>
+    </div>
+    <div class="right">
+      ${pageInfoHtml}<br>
+      دوره ارزیابی: <b>${escapeHtml(info.period)}</b>
+    </div>
+  </div>
+  <div class="info-strip">
+    <div class="info-item"><span class="lbl">واحد سازمانی:</span><span class="val">${escapeHtml(info.unit)}</span></div>
+    <div class="info-item"><span class="lbl">ارزیاب:</span><span class="val">${escapeHtml(info.evaluator)}</span></div>
+    <div class="info-item"><span class="lbl">ارزیابی‌شونده:</span><span class="val">${escapeHtml(info.evaluatee)}</span></div>
+    <div class="info-item"><span class="lbl">عنوان شغلی:</span><span class="val">${escapeHtml(info.position)}</span></div>
+    <div class="info-item"><span class="lbl">سطح سازمانی:</span><span class="val">${escapeHtml(info.level)}</span></div>
+    <div class="info-item"><span class="lbl">تاریخ ارزیابی:</span><span class="val">${escapeHtml(info.date)}</span></div>
+  </div>
+  <div class="score-section">
+    <div class="score-cell func">
+      <div class="lbl">میانگین وزنی عملکردی</div>
+      <div class="num">${funcAvg}</div>
+      <div class="sub">از ۱۰۰ — وزن ${w.functional}٪</div>
+    </div>
+    <div class="score-cell beh">
+      <div class="lbl">میانگین وزنی رفتاری</div>
+      <div class="num">${behAvg}</div>
+      <div class="sub">از ۱۰۰ — وزن ${w.behavioral}٪</div>
+    </div>
+    <div class="score-cell final">
+      <div class="lbl">امتیاز نهایی</div>
+      <div class="num">${finalScore}</div>
+      <div class="sub">از ۱۰۰</div>
+    </div>
+  </div>
+  <div class="comp-section">
+    <div class="comp-section-title func"><span class="dot"></span>شایستگی‌های عملکردی <span class="w-badge">وزن ${w.functional}٪</span></div>
+    <ul class="comp-grid">${buildCompactRows('functional')}</ul>
+  </div>
+  <div class="comp-section">
+    <div class="comp-section-title beh"><span class="dot"></span>شایستگی‌های رفتاری <span class="w-badge">وزن ${w.behavioral}٪</span></div>
+    <ul class="comp-grid">${buildCompactRows('behavioral')}</ul>
+  </div>
+  <div class="fb-section">
+    <div class="fb-cell"><div class="fb-lbl good">✅ نقاط قوت همکار</div><div class="fb-content">${escapeHtml(info.strengths)}</div></div>
+    <div class="fb-cell"><div class="fb-lbl warn">📈 حوزه‌های نیازمند بهبود</div><div class="fb-content">${escapeHtml(info.improvements)}</div></div>
+  </div>
+  <div class="sign-section">
+    <div class="sign-box"><div class="sign-line"></div><div class="sign-lbl">امضای ارزیاب (مدیر مستقیم)</div><div class="sign-name">${escapeHtml(info.evaluator)}</div></div>
+    <div class="sign-box"><div class="sign-line"></div><div class="sign-lbl">اطلاع و تأیید ارزیابی‌شونده</div><div class="sign-name">${escapeHtml(info.evaluatee)}</div></div>
+  </div>
+  <div class="footer">
+    <div class="line1">این کارنامه بر اساس مقیاس BARS (مقیاس درجه‌بندی مبتنی بر انکورهای رفتاری) تنظیم شده است.</div>
+    <div class="line2">مدیریت منابع انسانی</div>
+  </div>
+</div>`;
 }
 
 // ============================================================
@@ -930,7 +1056,6 @@ function switchTab(t){
   document.getElementById('tab-dashboard').classList.toggle('hidden', t !== 'dashboard');
 }
 
-// ============================================================
 checkSession();
 </script>
 </body>
