@@ -212,4 +212,318 @@ function renderEmployees(){
     });
     html += `</tbody></table>`;
   }
-  html += `</
+  html += `</div></div>`;
+  document.getElementById('tabContent').innerHTML = html;
+}
+
+function employeeForm(e = {}){
+  const eligible = profiles.filter(p => p.role === 'evaluator' || p.role === 'manager' || p.role === 'senior_manager' || p.role === 'admin');
+  const evalOptions = eligible.map(p => `<option value="${p.id}" ${e.evaluator_id===p.id?'selected':''}>${escapeHtml(p.full_name||'')} (${p.role})</option>`).join('');
+  return `
+    <div class="grid2">
+      <div class="field"><label>نام و نام خانوادگی *</label><input id="f_full_name" value="${escapeHtml(e.full_name||'')}"></div>
+      <div class="field"><label>کد پرسنلی</label><input id="f_personnel_code" value="${escapeHtml(e.personnel_code||'')}"></div>
+    </div>
+    <div class="grid2">
+      <div class="field"><label>سمت / عنوان شغلی</label><input id="f_position" value="${escapeHtml(e.position||'')}"></div>
+      <div class="field"><label>واحد / بخش *</label><input id="f_unit" value="${escapeHtml(e.unit||'')}" placeholder="مثلاً: فناوری اطلاعات"></div>
+    </div>
+    <div class="grid3">
+      <div class="field"><label>سطح شغلی</label>
+        <select id="f_job_level">
+          <option value="">—</option>
+          ${['کارشناس','کارشناس ارشد','سرپرست','مدیر','مدیر ارشد','کارمند','کارگر'].map(l => `<option value="${l}" ${e.job_level===l?'selected':''}>${l}</option>`).join('')}
+        </select>
+      </div>
+      <div class="field"><label>دسته شغلی *</label>
+        <select id="f_category">
+          <option value="technical" ${e.category==='technical'?'selected':''}>فنی</option>
+          <option value="staff" ${e.category==='staff'?'selected':''}>ستادی</option>
+        </select>
+      </div>
+      <div class="field"><label>ارزیاب مسئول *</label>
+        <select id="f_evaluator_id"><option value="">—</option>${evalOptions}</select>
+      </div>
+    </div>
+    <div class="field"><label>وضعیت</label>
+      <select id="f_is_active">
+        <option value="true" ${e.is_active!==false?'selected':''}>فعال</option>
+        <option value="false" ${e.is_active===false?'selected':''}>غیرفعال</option>
+      </select>
+    </div>`;
+}
+
+function openAddEmployee(){
+  showModal('افزودن پرسنل جدید', employeeForm(), async () => {
+    const data = {
+      full_name: document.getElementById('f_full_name').value.trim(),
+      personnel_code: document.getElementById('f_personnel_code').value.trim(),
+      position: document.getElementById('f_position').value.trim(),
+      unit: document.getElementById('f_unit').value.trim(),
+      job_level: document.getElementById('f_job_level').value,
+      category: document.getElementById('f_category').value,
+      evaluator_id: document.getElementById('f_evaluator_id').value || null,
+      is_active: document.getElementById('f_is_active').value === 'true'
+    };
+    if (!data.full_name){ alert('نام الزامیست'); return false; }
+    if (!data.unit){ alert('واحد الزامیست'); return false; }
+    if (!data.evaluator_id){ alert('انتخاب ارزیاب الزامیست'); return false; }
+    const { error } = await sb.from('employees').insert(data);
+    if (error){ alert('خطا: '+error.message); return false; }
+    showToast('پرسنل اضافه شد','success');
+    await loadAll(); renderEmployees();
+    return true;
+  });
+}
+
+function openEditEmployee(id){
+  const e = employees.find(x => x.id === id);
+  if (!e) return;
+  showModal('ویرایش پرسنل', employeeForm(e), async () => {
+    const data = {
+      full_name: document.getElementById('f_full_name').value.trim(),
+      personnel_code: document.getElementById('f_personnel_code').value.trim(),
+      position: document.getElementById('f_position').value.trim(),
+      unit: document.getElementById('f_unit').value.trim(),
+      job_level: document.getElementById('f_job_level').value,
+      category: document.getElementById('f_category').value,
+      evaluator_id: document.getElementById('f_evaluator_id').value || null,
+      is_active: document.getElementById('f_is_active').value === 'true'
+    };
+    const { error } = await sb.from('employees').update(data).eq('id', id);
+    if (error){ alert('خطا: '+error.message); return false; }
+    showToast('ویرایش شد','success');
+    await loadAll(); renderEmployees();
+    return true;
+  });
+}
+
+async function deleteEmployee(id){
+  if (!confirm('آیا مطمئنید؟ این پرسنل و ارزیابی‌های مربوطه حذف می‌شوند.')) return;
+  const { error } = await sb.from('employees').delete().eq('id', id);
+  if (error){ showToast('خطا: '+error.message,'error'); return; }
+  showToast('حذف شد','success');
+  await loadAll(); renderEmployees();
+}
+
+function openBulkUpload(){
+  const body = `
+    <div class="hint">
+      <b>راهنما:</b> هر خط یک پرسنل. مقادیر را با کاما جدا کنید.<br>
+      <code style="direction:ltr;display:inline-block;background:#fff;padding:4px 8px;border-radius:4px;margin:6px 0">نام, کد پرسنلی, سمت, سطح, واحد, دسته (technical/staff), نام ارزیاب</code><br>
+      سطر اول (هدر) اختیاری است. نام ارزیاب باید دقیقاً با یکی از کاربران موجود مطابقت داشته باشد.
+    </div>
+    <textarea class="csv-area" id="csvInput" placeholder="محمدحسین بهمنی,1001,کارشناس ارشد شبکه و زیرساخت,کارشناس ارشد,عملیات و زیرساخت فناوری اطلاعات,technical,نویدرضا نصرتی نیا"></textarea>`;
+  showModal('افزودن گروهی پرسنل', body, async () => {
+    const raw = document.getElementById('csvInput').value.trim();
+    if (!raw){ alert('محتوایی وارد نشده'); return false; }
+    const lines = raw.split('\n').map(l => l.trim()).filter(l => l);
+    const rows = lines.map(l => l.split(',').map(c => c.trim()));
+    const first = rows[0];
+    const hasHeader = first[5] && !['technical','staff'].includes(first[5].toLowerCase());
+    const dataRows = hasHeader ? rows.slice(1) : rows;
+    const nameMap = {};
+    profiles.forEach(p => { nameMap[(p.full_name||'').trim()] = p.id; });
+    const inserts = [], errors = [];
+    dataRows.forEach((r, i) => {
+      if (r.length < 7){ errors.push(`سطر ${i+1}: ستون‌های ناقص`); return; }
+      const [name, code, pos, level, unit, cat, evalName] = r;
+      const evaluatorId = nameMap[evalName];
+      if (!name){ errors.push(`سطر ${i+1}: نام خالی`); return; }
+      if (!unit){ errors.push(`سطر ${i+1}: واحد خالی`); return; }
+      if (!['technical','staff'].includes(cat)){ errors.push(`سطر ${i+1}: دسته نامعتبر "${cat}"`); return; }
+      if (!evaluatorId){ errors.push(`سطر ${i+1}: ارزیاب "${evalName}" پیدا نشد`); return; }
+      inserts.push({ full_name:name, personnel_code:code, position:pos, job_level:level, unit, category:cat, evaluator_id:evaluatorId, is_active:true });
+    });
+    if (errors.length){
+      alert('خطاها:\n' + errors.slice(0,10).join('\n') + (errors.length>10?`\n... و ${errors.length-10} خطای دیگر`:''));
+      return false;
+    }
+    if (!inserts.length){ alert('رکورد معتبری یافت نشد'); return false; }
+    const { error } = await sb.from('employees').insert(inserts);
+    if (error){ alert('خطا در درج: '+error.message); return false; }
+    showToast(`${inserts.length} پرسنل اضافه شد`, 'success');
+    await loadAll(); renderEmployees();
+    return true;
+  }, true);
+}
+
+// ============================================================
+// Users Tab (با نمایش وضعیت فعال/غیرفعال)
+// ============================================================
+function renderEvaluators(){
+  const activeCount = pendingUsers.filter(u => u.claimed).length;
+  const inactiveCount = pendingUsers.filter(u => !u.claimed).length;
+
+  let html = `<div class="card">
+    <div class="card-head">
+      <h2>👤 کاربران سیستم</h2>
+      <div style="display:flex;gap:8px;flex-wrap:wrap;align-items:center">
+        <span class="badge badge-active">🟢 فعال: ${activeCount}</span>
+        <span class="badge" style="background:rgba(245,158,11,.15);color:#b45309">🟡 در انتظار: ${inactiveCount}</span>
+      </div>
+    </div>
+    <div class="card-body" style="padding:0">
+      <div style="padding:14px 20px;background:#eff6ff;border-bottom:1px solid #bfdbfe;font-size:12.5px;color:#1e40af;line-height:1.8;display:flex;justify-content:space-between;align-items:center;gap:12px;flex-wrap:wrap">
+        <div>
+          💡 کاربرانی که هنوز حساب خود را <b>فعال</b> نکرده‌اند، باید به صفحه
+          <code style="background:#fff;padding:2px 6px;border-radius:4px">signup.html</code>
+          بروند و ایمیل خود را وارد کنند.
+        </div>
+        <div class="status-filter">
+          <button class="${userStatusFilter==='all'?'active':''}" onclick="setUserStatusFilter('all')">همه</button>
+          <button class="${userStatusFilter==='active'?'active':''}" onclick="setUserStatusFilter('active')">فعال</button>
+          <button class="${userStatusFilter==='inactive'?'active':''}" onclick="setUserStatusFilter('inactive')">در انتظار</button>
+        </div>
+      </div>
+      <table><thead><tr>
+        <th>نام</th><th>ایمیل</th><th>نقش</th><th>واحد</th><th>پرسنل تحت ارزیابی</th><th>وضعیت</th><th>عملیات</th>
+      </tr></thead><tbody>`;
+
+  const displayProfiles = profiles.filter(p => {
+    if (p.role === 'admin' && userStatusFilter === 'inactive') return false;
+    const pending = pendingUsers.find(x => (x.email||'').toLowerCase() === (p.email||'').toLowerCase());
+    const isActive = (p.role === 'admin') || (pending && pending.claimed);
+    if (userStatusFilter === 'active' && !isActive) return false;
+    if (userStatusFilter === 'inactive' && isActive) return false;
+    return true;
+  });
+
+  if (displayProfiles.length === 0){
+    html += `<tr><td colspan="7" style="text-align:center;padding:40px;color:var(--muted)">هیچ کاربری با این فیلتر یافت نشد.</td></tr>`;
+  }
+
+  displayProfiles.forEach(p => {
+    const count = employees.filter(e => e.evaluator_id === p.id).length;
+    let roleBadge = '<span class="badge badge-evaluator">ارزیاب</span>';
+    if (p.role === 'admin') roleBadge = '<span class="badge badge-admin">ادمین</span>';
+    else if (p.role === 'senior_manager') roleBadge = '<span class="badge badge-senior">مدیر ارشد</span>';
+    else if (p.role === 'manager') roleBadge = '<span class="badge badge-manager">مدیر ارزیابی</span>';
+
+    const pending = pendingUsers.find(x => (x.email||'').toLowerCase() === (p.email||'').toLowerCase());
+    let statusBadge;
+    if (p.role === 'admin'){
+      statusBadge = '<span class="badge badge-active">🟢 فعال</span>';
+    } else if (pending && pending.claimed){
+      statusBadge = '<span class="badge badge-active">🟢 فعال</span>';
+    } else {
+      statusBadge = '<span class="badge" style="background:rgba(245,158,11,.15);color:#b45309">🟡 در انتظار فعال‌سازی</span>';
+    }
+
+    html += `<tr>
+      <td><b>${escapeHtml(p.full_name||'—')}</b></td>
+      <td style="direction:ltr;text-align:right">${escapeHtml(p.email||'—')}</td>
+      <td>${roleBadge}</td>
+      <td>${escapeHtml(p.unit||'—')}</td>
+      <td>${count} نفر</td>
+      <td>${statusBadge}</td>
+      <td class="actions-cell">
+        <button class="icon-btn" onclick="openEditUser('${p.id}')">✏️ ویرایش</button>
+      </td></tr>`;
+  });
+  html += `</tbody></table></div></div>`;
+  document.getElementById('tabContent').innerHTML = html;
+}
+
+function setUserStatusFilter(f){
+  userStatusFilter = f;
+  renderEvaluators();
+}
+
+function openEditUser(id){
+  const p = profiles.find(x => x.id === id);
+  if (!p) return;
+  const body = `
+    <div class="grid2">
+      <div class="field"><label>نام و نام خانوادگی</label><input id="u_name" value="${escapeHtml(p.full_name||'')}"></div>
+      <div class="field"><label>واحد سازمانی</label><input id="u_unit" value="${escapeHtml(p.unit||'')}" placeholder="مثلاً: فناوری اطلاعات"></div>
+    </div>
+    <div class="field"><label>نقش</label>
+      <select id="u_role">
+        <option value="evaluator" ${p.role==='evaluator'?'selected':''}>ارزیاب (فقط پرسنل خودش)</option>
+        <option value="manager" ${p.role==='manager'?'selected':''}>مدیر ارزیابی (مشاهده همه)</option>
+        <option value="senior_manager" ${p.role==='senior_manager'?'selected':''}>مدیر ارشد (مشاهده همه)</option>
+        <option value="admin" ${p.role==='admin'?'selected':''}>ادمین (دسترسی کامل)</option>
+      </select>
+    </div>
+    <div class="hint" style="margin-top:12px">
+      💡 واحد سازمانی برای ارزیاب‌ها الزامی است (در فرم، به‌طور خودکار پر می‌شود).
+    </div>`;
+  showModal('ویرایش کاربر', body, async () => {
+    const data = {
+      full_name: document.getElementById('u_name').value.trim(),
+      role: document.getElementById('u_role').value,
+      unit: document.getElementById('u_unit').value.trim()
+    };
+    const { error } = await sb.from('profiles').update(data).eq('id', id);
+    if (error){ alert('خطا: '+error.message); return false; }
+    showToast('ذخیره شد','success');
+    await loadAll(); renderEvaluators();
+    return true;
+  });
+}
+
+// ============================================================
+// Stats Tab
+// ============================================================
+function renderStats(){
+  const total = employees.filter(e => e.is_active).length;
+  const submitted = evaluations.filter(e => e.status === 'submitted').length;
+  const draft = evaluations.filter(e => e.status === 'draft').length;
+  const none = total - submitted - draft;
+  const withScore = evaluations.filter(e => e.status==='submitted' && e.final_score);
+  const avg = withScore.length ? (withScore.reduce((a,b)=>a+Number(b.final_score),0)/withScore.length).toFixed(1) : '—';
+
+  const html = `<div class="card"><div class="card-head"><h2>📊 آمار کلی</h2></div>
+  <div class="card-body">
+    <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(180px,1fr));gap:16px">
+      <div style="background:#f8fafc;border:1px solid var(--border);border-radius:10px;padding:20px;text-align:center">
+        <div style="font-size:12.5px;color:var(--muted);font-weight:600">کل پرسنل فعال</div>
+        <div style="font-size:30px;font-weight:800;color:var(--primary)">${total}</div>
+      </div>
+      <div style="background:#f8fafc;border:1px solid var(--border);border-radius:10px;padding:20px;text-align:center">
+        <div style="font-size:12.5px;color:var(--muted);font-weight:600">ارسال‌شده</div>
+        <div style="font-size:30px;font-weight:800;color:var(--success)">${submitted}</div>
+      </div>
+      <div style="background:#f8fafc;border:1px solid var(--border);border-radius:10px;padding:20px;text-align:center">
+        <div style="font-size:12.5px;color:var(--muted);font-weight:600">پیش‌نویس</div>
+        <div style="font-size:30px;font-weight:800;color:var(--warning)">${draft}</div>
+      </div>
+      <div style="background:#f8fafc;border:1px solid var(--border);border-radius:10px;padding:20px;text-align:center">
+        <div style="font-size:12.5px;color:var(--muted);font-weight:600">شروع نشده</div>
+        <div style="font-size:30px;font-weight:800;color:var(--muted)">${none}</div>
+      </div>
+      <div style="background:#f8fafc;border:1px solid var(--border);border-radius:10px;padding:20px;text-align:center">
+        <div style="font-size:12.5px;color:var(--muted);font-weight:600">میانگین امتیاز</div>
+        <div style="font-size:30px;font-weight:800;color:var(--primary)">${avg}</div>
+      </div>
+    </div>
+  </div></div>`;
+  document.getElementById('tabContent').innerHTML = html;
+}
+
+// ============================================================
+// Modal
+// ============================================================
+function showModal(title, bodyHtml, onSave, wide=false){
+  const root = document.getElementById('modalRoot');
+  root.innerHTML = `<div class="modal-back" onclick="if(event.target===this) closeModal()">
+    <div class="modal" style="${wide?'max-width:800px':''}">
+      <h3>${title}</h3>
+      <div style="margin-bottom:18px">${bodyHtml}</div>
+      <div style="display:flex;gap:10px;justify-content:flex-end">
+        <button class="btn btn-ghost" onclick="closeModal()">لغو</button>
+        <button class="btn btn-primary" id="modalSaveBtn">ذخیره</button>
+      </div>
+    </div></div>`;
+  document.getElementById('modalSaveBtn').onclick = async () => {
+    const ok = await onSave();
+    if (ok) closeModal();
+  };
+}
+function closeModal(){ document.getElementById('modalRoot').innerHTML = ''; }
+
+checkSession();
+</script>
+</body>
+</html>
