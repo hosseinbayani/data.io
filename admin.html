@@ -226,7 +226,7 @@ function employeeForm(e = {}){
       <div class="field"><label>سطح شغلی</label>
         <select id="f_job_level">
           <option value="">—</option>
-          ${['جونیور','میانی','سنیور','لید / سرتیم'].map(l => `<option value="${l}" ${e.job_level===l?'selected':''}>${l}</option>`).join('')}
+          ${['کارشناس','کارشناس ارشد','سرپرست','مدیر','مدیر ارشد','کارمند','کارگر'].map(l => `<option value="${l}" ${e.job_level===l?'selected':''}>${l}</option>`).join('')}
         </select>
       </div>
       <div class="field"><label>دسته شغلی *</label>
@@ -307,8 +307,7 @@ function openBulkUpload(){
       <code style="direction:ltr;display:inline-block;background:#fff;padding:4px 8px;border-radius:4px;margin:6px 0">نام, کد پرسنلی, سمت, سطح, واحد, دسته (technical/staff), نام ارزیاب</code><br>
       سطر اول (هدر) اختیاری است. نام ارزیاب باید دقیقاً با یکی از کاربران موجود مطابقت داشته باشد.
     </div>
-    <textarea class="csv-area" id="csvInput" placeholder="محمد احمدی,1001,کارشناس ارشد نرم‌افزار,سنیور,فناوری اطلاعات,technical,علی رضایی
-سارا کریمی,1002,کارشناس نرم‌افزار,میانی,فناوری اطلاعات,technical,علی رضایی"></textarea>`;
+    <textarea class="csv-area" id="csvInput" placeholder="محمدحسین بهمنی,1001,کارشناس ارشد شبکه و زیرساخت,کارشناس ارشد,عملیات و زیرساخت فناوری اطلاعات,technical,نویدرضا نصرتی نیا"></textarea>`;
   showModal('افزودن گروهی پرسنل', body, async () => {
     const raw = document.getElementById('csvInput').value.trim();
     if (!raw){ alert('محتوایی وارد نشده'); return false; }
